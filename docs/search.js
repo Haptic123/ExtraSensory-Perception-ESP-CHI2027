@@ -1,0 +1,1 @@
+const input=document.querySelector('#search');const links=[...document.querySelectorAll('nav a[data-search]')];input.addEventListener('input',()=>{const terms=input.value.toLowerCase().trim().split(/\s+/);let count=0;for(const a of links){const match=terms.every(t=>a.dataset.search.includes(t));a.hidden=!match;if(match)count++;}document.querySelector('#empty').hidden=count>0;});

@@ -1,0 +1,1 @@
+# For credential setup, open the Setting Credentials on n8n page.

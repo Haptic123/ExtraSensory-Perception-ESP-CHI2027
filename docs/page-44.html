@@ -1,0 +1,3823 @@
+<!doctype html>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Smartwatch App | Haptic Feedback Documentation</title><link rel="stylesheet" href="site.css"><script defer src="search.js"></script></head><body><a class="skip" href="#main">Skip to content</a><header class="top"><a class="brand" href="index.html"><span class="mark" aria-hidden="true">≈</span> Haptic Feedback <span class="brand-sub">/ Documentation</span></a><div class="top-links"><a href="page-45.html">Architecture</a><a href="page-18.html">Get started <span aria-hidden="true">↗</span></a></div></header><div class="layout"><nav aria-label="Documentation"><a href="index.html">Documentation home</a><label for="search">Search documentation</label><input id="search" type="search" placeholder="Search topics or page content…"><p id="empty" role="status" hidden>No matching pages.</p><section class="nav-group"><h2>Overview &amp; setup</h2><a href="page-48.html" data-search="smartwatch haptic feedback hub smartwatch haptic feedback hub
+💡 welcome. this documentation helps you understand how the smartwatch haptic feedback system works and where each part of the system fits.
+the system supports research studies where participants receive real-time haptic feedback through a wear os smartwatch. the watch collects sensor data and vibrates, the android phone connects the watch to the backend, n8n processes the data and decides what feedback to send, postgresql stores the system data, and the researchersideapp gives you a dashboard for managing the study.
+about the smartwatch haptic feedback system
+the smartwatch haptic feedback system is an experimental platform for delivering vibrotactile feedback through a wear os smartwatch. it combines a smartwatch sensing and vibration app, an android phone relay, n8n automation workflows, a postgresql database, and a researchersideapp dashboard. researchers can define use cases, configure feedback mappings, monitor participant data, and study how different haptic patterns support awareness, interpretation, and behavior during hci experiments.
+key features
+the system includes several connected components that support end-to-end haptic feedback experiments:
+
+smartwatch sensing and vibration: the wear os app collects sensor data such as heart rate and executes vibration commands.
+android phone relay: the phone app connects the watch to the backend, adds context such as gps when needed, and relays backend haptic instructions back to the watch.
+n8n automation backend: workflows receive data, call apis, apply mapping logic, manage schedules and dictionary entries, and return vibration instructions.
+postgresql database: stores users, devices, use cases, haptic mapping rules, sensor data, alerts, schedules, and ai assistant context.
+researchersideapp dashboard: lets researchers manage users, rules, schedules, dictionary entries, data views, and ai-assisted actions.
+
+what the system does
+at a high level:
+
+you configure users, use cases, mappings, and schedules in the researchersideapp.
+the smartwatch collects sensor data from the participant.
+the android phone sends watch data and phone context to n8n.
+n8n looks up the user's active mapping, applies the relevant logic, stores the result, and returns haptic instructions.
+the phone forwards the haptic command to the watch.
+the watch performs the vibration pattern.
+
+how to use these docs
+choose the component you are working with. if you want the full system picture, use system architecture. if you want a focused explanation of how the parts talk to each other, use communication between components. if you are preparing or running a study, start with researchersideapp and then check the phone and smartwatch pages as needed. if you want to add a use case, use adding a new use case.
+github
+
+researcherside dashboard [link removed for anonymity] - used to manage experiments that live on the system.
+smartwatch haptic app (wear os) [link removed for anonymity] - wear os application serves as the primary edge node for the system.
+android phone app [link removed for anonymity] - the client that consumes these endpoints.
+haptic backend [link removed for anonymity] - the automation layer
+
+system components
+system architecture
+end-to-end system installation
+researchersideapp
+android phone app
+smartwatch app
+n8n
+database
+communication between components
+guides
+tutorial videos [removed for anonymity]
+adding a new use case
+initial installation - phone &amp; watch
+setting credentials on n8n
+features
+schedules
+use case dictionary
+chat and knowledge assistant
+graphs and data review">Smartwatch Haptic Feedback Hub</a><a href="page-45.html" data-search="system architecture system architecture
+use this page when you want the full system picture: what each component does, where data flows, and where to look when something is not working.
+big picture
+researchersideapp
+      |
+      | researcher actions over http
+      v
+n8n workflows  &lt;------&gt;  postgresql database
+      ^                       ^
+      |                       |
+      | live data requests    | stores users, use cases,
+      |                       | mappings, schedules, readings,
+android phone relay           | feedback events, and history
+      ^
+      | bluetooth
+      v
+wear os smartwatch
+
+components
+
+researchersideapp: the dashboard researchers use to prepare and manage the study.
+android phone app: the relay between the smartwatch and the backend.
+smartwatch app: the participant-facing device app that collects readings and vibrates.
+n8n: the backend workflow layer that receives requests, applies logic, and returns responses.
+postgresql database: the source of truth for users, use cases, mappings, schedules, readings, and feedback history.
+
+main experiment flow
+
+you configure the participant, use case, mapping, and schedule in researchersideapp.
+the smartwatch collects a reading from the participant.
+the phone receives the reading from the watch and sends it to n8n.
+n8n checks the active mapping for that participant and use case.
+n8n stores the reading and feedback decision in the database.
+n8n sends a haptic instruction back to the phone.
+the phone sends the instruction to the smartwatch.
+the watch vibrates.
+
+researcher control flow
+when you make a change in researchersideapp, the dashboard sends the request to n8n. n8n updates the database. the phone and watch do not receive that change directly; they use it the next time runtime data reaches n8n.
+important boundaries
+
+the smartwatch only talks to the android phone.
+the android phone talks to the smartwatch and n8n.
+researchersideapp talks to n8n.
+n8n talks to the database.
+the database is not edited directly by the watch or phone.
+
+what to check first
+
+if researchers cannot see users, mappings, schedules, or graphs: start with researchersideapp and n8n.
+if readings are missing: check the watch, phone connection, and n8n request path.
+if the watch does not vibrate: check n8n's returned haptic instruction, the phone relay, and the watch app.
+if use cases or mappings look wrong: check researchersideapp, n8n mapping behavior, and the database assignment model.
+">System Architecture</a><a href="page-18.html" data-search="end-to-end system installation end-to-end system installation
+this guide explains how to install the complete smartwatch haptic feedback system on a clean environment and verify the full flow:
+smartwatch sensor → android phone → n8n backend → postgresql → haptic mapping → phone → smartwatch vibration → researchersideapp
+use this page for a complete installation. the linked component pages provide screenshots, detailed ui instructions, and component-specific troubleshooting.
+
+
+table of contents
+
+system componentsrelated documentation2. choose the installation typerecommended handover installationdeveloper installation3. prerequisitesserver computerdevicesaccounts and credentials4. collect the required installation files5. install and restore postgresqlmore information5.1 install postgresql5.2 create the databasecommand-line optionpgadmin option5.3 restore the database dumpcommand-line optionpgadmin option5.4 verify the database6. install and configure n8n6.1 install n8n6.2 import the workflows6.3 configure credentialspostgresqlopenaismtp/emailother ai or external apis6.4 reconnect workflow references6.5 test database access6.6 activate the workflows7. configure backend network accessoption a: everything on the server computeroption b: set up ngrokresearcherside and the phone may use:test the url8. install researchersideappoption a: use the prepared executableoption b: run from sourceverify researchersidedetailed guide9. initial installation - phone &amp; watch10. configure the participant in researcherside11. run the complete end-to-end test11.1 start the services11.2 check the watch11.3 check the phone11.4 check researcherside11.5 produce one sensor reading11.6 verify each layerwatchphonen8npostgresqlresearcherside12. test optional featuresai researcher assistantmonitoring-stop alertsdata exportexternal api use cases13. common installation problemsresearcherside does not loadimported workflows fail to call each otherpostgresql nodes failphone cannot reach n8nphone cannot find the watchreadings reach n8n but no vibration is returneda haptic command is returned but the watch does not vibrateparticipant disappeared from an active viewai assistant failsmonitoring-stop email is not received14. maintenance rules15. source repositories and detailed guidessource repositoriesnotion documentation
+
+
+
+
+1. system components
+the system contains five main components:
+
+postgresql database: stores participants, devices, use cases, mappings, schedules, sensor readings, alerts, and ai session information.
+n8n backend: receives sensor readings, queries the database, evaluates feedback mappings, stores results, returns haptic commands, and serves the researcherside application.
+researchersideapp: used to manage participants, use cases, mappings, schedules, monitoring, graphs, exports, and the ai researcher assistant.
+android phone application: connects the smartwatch to n8n. it receives readings through bluetooth, sends them to the backend, and returns vibration commands to the watch.
+wear os smartwatch application: collects sensor readings and performs the haptic feedback.
+
+related documentation
+
+smartwatch haptic feedback hub
+researchersideapp documentation
+initial installation – phone &amp; watch
+setting credentials on n8n
+
+2. choose the installation type
+recommended handover installation
+use the prepared release files:
+
+current postgresql dump
+exported n8n workflows
+researcherside executable
+android phone apk
+wear os watch apk
+
+this is the recommended option for researchers and system operators.
+developer installation
+build the applications from their source repositories:
+
+backend and database [link removed for anonymity]
+researchersideapp [link removed for anonymity]
+android phone application [link removed for anonymity]
+wear os application [link removed for anonymity]
+
+use the developer installation when changing urls, phone ids, application logic, sensors, or haptic behavior.
+3. prerequisites
+server computer
+install or prepare:
+
+windows computer with administrator access
+postgresql 18
+pgadmin or postgresql command-line tools
+self-hosted n8n
+java/jdk 17 or newer
+intellij idea when building researcherside from source
+android studio when building either android application
+android sdk 34
+git, when cloning the repositories
+a stable network connection
+a reachable n8n webhook url
+
+devices
+prepare:
+
+android 11 or newer phone
+wear os watch running android api 30 or newer
+usb data cable for the phone
+watch charger
+phone and watch bluetooth pairing
+wi-fi access for the phone and server
+developer mode and debugging access when installing apks manually
+
+accounts and credentials
+prepare access to:
+
+postgresql administrator account
+n8n administrator account
+openai api account
+smtp/email account for monitoring-stop alerts
+any external apis used by enabled use cases
+public tunnel, domain, or server configuration when operating outside the local network
+
+
+🔐 never store database passwords, openai keys, smtp passwords, or private api keys in github, exported workflow json files, screenshots, or this notion page.
+
+
+4. collect the required installation files
+before beginning, create one installation folder containing:
+smartwatch-haptic-installation/
+├── database/
+│   └── db-18072026.sql
+├── n8n-workflows/
+│   ├── db manager.json
+│   ├── vibration orchestrator.json
+│   ├── chat orchestrator.json
+│   ├── mapping manager.json
+│   ├── schedule manager.json
+│   ├── dictionary manager.json
+│   ├── use case builder.json
+│   ├── knowledge agent.json
+│   ├── expert panel agent.json
+│   └── agent expert - [...].json
+└─ applications/
+   ├── researchersideapp.exe
+   ├── phoneapp.apk
+   └── watchapp.apk
+
+the workflow repository may contain additional root-level json files. import all current root-level workflow files, not only the three public entrypoints.
+
+5. install and restore postgresql
+more information
+see the database setup and operations section in the database.
+5.1 install postgresql
+install postgresql 18, including:
+
+postgresql server
+pgadmin
+command line tools
+
+record the following securely:
+
+host
+port
+administrator username
+administrator password
+
+the default local values are usually:
+host: localhost
+port: 5432
+username: postgres
+
+5.2 create the database
+create a database named:
+smartwatchsys_db
+
+command-line option
+createdb -u postgres smartwatchsys_db
+
+pgadmin option
+
+open pgadmin.
+connect to the postgresql server.
+right-click databases.
+select create → database.
+enter smartwatchsys_db.
+save.
+
+5.3 restore the database dump
+command-line option
+run the command from the folder containing the sql file:
+psql -u postgres -d smartwatchsys_db -f db-18072026.sql
+
+pgadmin option
+
+select smartwatchsys_db.
+open query tool.
+load db-18072026.sql.
+execute the file.
+wait for completion.
+review the messages panel for errors.
+
+5.4 verify the database
+confirm that the database contains tables including:
+
+user
+watch
+androidphone
+usecase
+usecasedictionary
+feedback_config_rules
+user_uc_mappings
+sensordata
+alert
+user_schedules
+agent_session
+
+also verify that database functions such as the ‘resolve_fb_range’ and ‘insert_sensor_data’ functions were created.
+
+✅ verification gate: the schema is visible, existing use cases can be queried, and no critical errors appeared during restoration.
+verification gate:
+
+
+
+6. install and configure n8n
+6.1 install n8n
+install the validated n8n version listed at the top of this page. [link removed for anonymity] [link removed for anonymity]
+after installation:
+
+start n8n.
+open the n8n editor.
+create or sign in to the administrator account.
+confirm that the editor loads correctly.
+
+the default local address is generally:
+[link removed for anonymity]
+
+6.2 import the workflows
+import every current root-level .json workflow from the backend repository or installation package. read more about workflows n8n workflows breakdown
+the main public workflows are:
+
+db manager
+vibration orchestrator
+chat orchestrator
+
+supporting workflows include:
+
+mapping manager
+schedule manager
+dictionary manager
+use case builder
+expert panel agent
+the agent expert workflows
+knowledge agent [deprecated]
+
+💡 do not activate them yet.
+6.3 configure credentials
+configure every credential referenced by the imported workflows.
+for detailed credential instructions, open:
+
+setting credentials on n8n
+n8n postgresql documentation [link removed for anonymity]
+n8n openai credentials [link removed for anonymity]
+n8n google ai credentials [link removed for anonymity]
+n8n send email credentials [link removed for anonymity]
+
+postgresql
+point all postgresql credential references to:
+host: localhost
+port: 5432
+database: smartwatchsys_db
+user: [postgresql user]
+password: [postgresql password]
+
+openai
+configure the openai credential used by the chat and ai-agent workflows.
+smtp/email
+configure smtp credentials when monitoring-stop email alerts are enabled.
+other ai or external apis
+configure google ai or additional api credentials only when they are referenced by the imported workflow version.
+6.4 reconnect workflow references
+
+⚠️ do not skip this step.
+do not skip this step.
+
+
+imported workflow ids can differ from the ids stored in exported files.
+open every node of the following types:
+
+execute workflow
+workflow tools used by ai agents
+any node that selects another workflow by id
+
+re-select the intended target workflow from the dropdown, even when a workflow name already appears.
+pay particular attention to links between:
+
+orchestrators and manager workflows
+chat orchestrator and ai workflows
+knowledge and expert-panel workflows
+use case builder and dictionary/mapping workflows
+
+a workflow may import successfully but still fail at runtime when these references are not reconnected.
+6.5 test database access
+run a safe database-reading node or connection-check endpoint.
+confirm:
+
+postgresql credentials authenticate successfully.
+smartwatchsys_db is selected.
+existing participants or use cases are returned.
+no credential or sql errors appear.
+
+6.6 activate the workflows
+at minimum, activate:
+
+db manager
+vibration orchestrator
+chat orchestrator
+
+activate the supporting workflows required by the current workflow design.
+
+✅ verification gate: the production webhooks are registered, postgresql queries succeed, and all execute workflow nodes point to valid workflows.
+verification gate:
+
+
+
+7. configure backend network access
+the correct url depends on where the clients are running.
+option a: everything on the server computer
+researcherside may use:
+[link removed for anonymity]
+
+the phone cannot use localhost, because localhost on the phone refers to the phone itself.
+option b: set up ngrok
+expose your local n8n server to the internet so that both the phone app and the researcher dashboard can communicate with it from outside the local network.
+
+install ngrok [link removed for anonymity] and sign up for a free account to get an authentication token.
+
+authenticate your ngrok cli in your terminal:
+bash
+ngrok config add-authtoken &lt;your_auth_token&gt;
+
+
+start the tunnel to forward traffic to the local n8n instance (port 5678):
+bash
+ngrok http 5678
+
+
+copy the generated public https url from the terminal output (e.g., `[link removed for anonymity]).
+
+
+both the phone app and the researcher dashboard must use this address:
+researcherside and the phone may use:
+https://&lt;your-subdomain&gt;.ngrok-free.app/webhook
+
+test the url
+from another device on the intended network, call a safe connection-check endpoint.
+confirm that:
+
+the host resolves.
+https certificates are accepted when using https.
+the request reaches n8n.
+the expected workflow executes.
+the response is not an n8n editor page or tunnel warning page.
+
+record the final base url at the top of this document.
+
+8. install researchersideapp
+option a: use the prepared executable
+
+copy the current researcherside release folder to the server computer.
+keep any included libraries or configuration files beside the executable.
+confirm that the application is configured for the correct n8n production url.
+start the application.
+allow it through windows firewall if prompted.
+
+the recommended setup is to run researcherside on the same computer as n8n, using:
+[link removed for anonymity]
+
+option b: run from source
+
+clone or download the researcherside repository [link removed for anonymity].
+install jdk 17 or newer with javafx support.
+open the project in intellij idea.
+add the bundled root-level jar files to the module classpath.
+open:
+
+com/example/demo/service/apiservice.java
+
+
+set the n8n production webhook url.
+run:
+
+com.example.demo.smartwatchhapticsystemapplication
+
+verify researcherside
+confirm that:
+
+the initial n8n connection check succeeds.
+the dashboard loads.
+participants and use cases are visible.
+mapping and schedule pages load.
+no database credentials are requested by the desktop application.
+
+researcherside communicates with n8n and does not connect directly to postgresql.
+detailed guide
+open the researchersideapp documentation.
+
+✅ verification gate: researcherside opens, passes its backend connection check, and loads database-backed information.
+verification gate:
+
+
+
+9. initial installation - phone &amp; watch
+before configuring the applications, determine:
+
+participant/user id
+smartwatch id
+android phone id
+assigned use case
+active feedback mapping
+
+example:
+user id: 1
+smartwatch id: 1
+android phone id: 50
+
+the identifiers used by the watch name, phone application, database, and researcherside must refer to the same participant-device assignment.
+for the full detailed guide: initial installation - phone &amp; watch
+
+10. configure the participant in researcherside
+after the applications and backend are available:
+
+open researcherside.
+create or select the intended participant.
+confirm that the participant id matches the watch bluetooth name.
+confirm that the android phone and smartwatch ids match the configured devices.
+assign the required use case.
+assign an active feedback mapping.
+review the mapping ranges and haptic parameters.
+configure a schedule when the use case requires one.
+confirm that the participant has an active monitoring configuration.
+
+the active mapping must define the appropriate values for:
+
+minimum and maximum sensor values
+pulses
+intensity
+duration
+interval
+
+
+⚠️ confirm that the assigned mapping is active. a participant assigned only to an inactive mapping may not appear correctly in active views and will not receive the expected feedback.
+
+
+for exact interface instructions, use the mapping, monitoring, scheduling, and participant sections of the researchersideapp documentation.
+
+11. run the complete end-to-end test
+use test ids or a designated test participant rather than an active research participant.
+11.1 start the services
+start in this order:
+
+postgresql
+n8n
+required active n8n workflows
+researcherside
+wear os application
+android phone application
+
+11.2 check the watch
+confirm:
+
+correct bluetooth name
+body-sensor permission granted
+bluetooth permission granted
+application running
+foreground notification visible
+battery sufficient
+
+11.3 check the phone
+confirm that the diagnostics show:
+
+bluetooth connected
+n8n connected
+location available when required
+correct monitoring type
+foreground monitoring service active
+
+11.4 check researcherside
+confirm:
+
+correct participant selected
+correct use case selected
+active mapping assigned
+monitoring enabled
+expected schedules visible
+
+11.5 produce one sensor reading
+start monitoring and wait for one reading.
+the expected route is:
+watch
+→ bluetooth sensor message
+→ android phone
+→ post /webhook/usecase-routing
+→ vibration orchestrator
+→ database lookup and mapping evaluation
+→ sensordata and alert records
+→ haptic response
+→ android phone
+→ vibrate command
+→ watch vibration
+
+11.6 verify each layer
+watch
+
+a sensor reading was produced.
+a vibration was received.
+
+phone
+
+the sensor message contains the expected ids.
+the n8n request succeeded.
+a haptic response was received.
+the vibration command was sent to the watch.
+
+n8n
+
+the correct production workflow executed.
+no node failed.
+the correct use-case branch was selected.
+an active mapping was found.
+a haptic result was generated.
+
+postgresql
+verify that the test created or updated the expected records in:
+
+sensordata
+alert
+
+researcherside
+
+the new reading appears.
+the feedback event appears.
+the graph updates.
+the participant remains connected.
+
+
+✅ installation success: the test sensor value reaches the backend and database, appears in researcherside, and causes the expected watch vibration.
+installation success:
+
+
+
+12. test optional features
+after the main sensor-to-vibration flow succeeds, test each enabled optional feature separately.
+ai researcher assistant
+confirm:
+
+chat orchestrator is active.
+openai credentials are valid.
+supporting agent workflows are connected.
+a basic participant or mapping question returns an answer.
+a write action is tested only with safe test data.
+
+monitoring-stop alerts
+confirm:
+
+smtp credentials are configured.
+the stopped-monitoring webhook is active.
+a test stop event reaches db manager.
+the expected email is received.
+
+data export
+confirm that researcherside can export:
+
+csv
+pdf
+
+open the exported files and verify that the participant, timestamps, readings, and feedback information are correct.
+external api use cases
+for each enabled api-based use case:
+
+verify the api credential or token.
+verify required parameters such as coordinates.
+run one test request.
+confirm a numeric value reaches the mapping stage.
+confirm the corresponding feedback is stored and returned.
+
+
+13. common installation problems
+researcherside does not load
+check:
+
+postgresql is running.
+n8n is running.
+db manager is active.
+apiservice.java or the packaged application points to the correct url.
+the url ends with /webhook.
+the connection-check endpoint responds.
+
+imported workflows fail to call each other
+likely cause:
+
+exported workflow ids no longer match the imported workflow ids.
+
+fix:
+
+open every execute workflow or workflow-tool node.
+re-select the target workflow.
+save the workflow.
+test it again.
+
+postgresql nodes fail
+check:
+
+database name is smartwatchsys_db.
+postgresql service is running.
+host and port are correct.
+username and password are correct.
+both imported postgresql credentials point to the restored database.
+the current sql dump was completely restored.
+
+phone cannot reach n8n
+check:
+
+the phone is not using localhost.
+the configured url includes /webhook.
+the workflow is active.
+the phone can reach the server network address.
+windows firewall permits the connection.
+the https certificate is valid.
+local http access is allowed in network_security_config.xml when applicable.
+
+phone cannot find the watch
+check:
+
+phone and watch are paired.
+the watch name follows the required format.
+the name contains smartwatchid.
+bluetooth permissions are granted.
+the watch app is running.
+remove conflicting paired watches during testing.
+
+readings reach n8n but no vibration is returned
+check:
+
+correct participant id
+correct watch and phone ids
+active monitoring type
+active use case
+active mapping assignment
+sensor value falls within a configured mapping range
+mapping intensity, pulses, and duration are positive
+rate-limit or smoothing behavior
+workflow execution errors
+
+a haptic command is returned but the watch does not vibrate
+check:
+
+phone bluetooth connection
+watch application and foreground service
+watch vibration permission and device settings
+haptic intensity is no greater than 255
+pulses, intensity, and duration are positive
+phone log confirms that the vibrate command was sent
+
+participant disappeared from an active view
+check:
+
+the participant still has an active assignment.
+the assigned mapping is active.
+the participant was reassigned when an old mapping was deactivated or deleted.
+show all and assignment-history views before changing database records manually.
+
+ai assistant fails
+check:
+
+openai credentials
+model access and available balance
+chat orchestrator
+agent workflow references
+required vector-store or context configuration
+failed n8n execution logs
+
+monitoring-stop email is not received
+check:
+
+smtp credentials
+recipient configuration
+db manager
+stopped-monitoring webhook execution
+spam folder
+email provider security restrictions
+
+
+14. maintenance rules
+whenever the system changes:
+
+backend url changed: update the phone application and researcherside configuration.
+phone id changed: update both the phone build and database assignment.
+watch or user changed: update the bluetooth alias and database records.
+workflows imported again: re-select all workflow references.
+database schema changed: create a new dump and update this page.
+use case added: keep its name identical across the database, dictionary, n8n, phone/watch logic, and researcherside.
+apk or exe rebuilt: archive the old version and update the version manifest.
+credentials rotated: update n8n credentials and rerun the relevant tests.
+tunnel or domain changed: verify all client applications before the next session.
+
+
+15. source repositories and detailed guides
+source repositories
+
+smartwatch haptic workflow backend [link removed for anonymity]
+researchersideapp [link removed for anonymity]
+android phone haptic relay [link removed for anonymity]
+smartwatch haptic app [link removed for anonymity]
+
+notion documentation
+
+smartwatch haptic feedback hub
+initial installation – phone &amp; watch
+researchersideapp documentation
+setting credentials on n8n
+">End-to-End System Installation</a><a href="page-19.html" data-search="initial installation - phone &amp; watch initial installation - phone &amp; watch
+
+follow these steps to create a user, install the watch app, install the phone app, connect the devices, and start monitoring.
+consider watching the  as a follow-up video guide.
+
+
+
+1. create a new user
+
+open the researcherside app on the server.
+in the left tab, go to users and click the + button.
+give the user a unique id; naming is optional.
+
+
+2. reset the watch
+make sure the watch is reset, has no prior connections to a phone, and has no app installed.
+go to:
+general management &gt; reset
+
+
+on your phone open the wear app and follow the instructions on your phone and watch [support] [link removed for anonymity].
+open the watch, start the wear app on the phone. the app should recognize your watch.
+continue as instructed on the wear app and watch.
+
+
+3. download the app to the watch
+❗ make sure you have android studio installed on your computer
+
+download the watch.apk file to your computer. link to download:
+
+[link removed for anonymity]
+
+on the watch, go to:
+
+settings &gt; about watch &gt; software info
+
+
+repeatedly tap software version 5 to 7 times.
+go back to:
+
+settings → developer options
+
+
+enable wireless debugging.
+
+
+make sure your watch and computer are connected to the same network.
+
+in cmd, navigate to the platform-tools folder by typing:
+
+
+cd %localappdata%\android\sdk\platform-tools
+
+
+4. pair the watch with adb
+on the watch, tap:
+wireless debugging → pair new device with pairing code
+
+you will see:
+ip &amp; pairing port
+
+example:
+192.168.0.123:37015
+
+you will also see a 6-digit pairing code.
+
+5. pair from cmd
+on cmd write:
+adb pair 192.168.0.123:37015
+
+then enter the pairing code.
+
+6. find the adb connection port
+still on the pairing screen, you’ll see the adb connection port.
+it usually looks something like:
+192.168.0.123:5555
+
+
+7. connect to the watch
+on cmd write:
+adb connect 192.168.0.123:5555
+
+you should see:
+connected to 192.168.0.123:5555
+
+
+8. install the watch app
+on cmd run:
+adb -s watch_ip:adb_port install -r path\to\watch-app.apk
+
+replace watch_ip:adb_port with those you used in 3.8, and replace path\to\watch-app.apk with the path of the apk on your computer.
+example:
+adb -s 192.168.0.123:5555 install -r c:\users\yourname\downloads\watch.apk
+
+
+9. download the phone app
+download the phone.apk to your phone, open the file and download it.
+
+if asked, do not let the phone run a security check on the app.
+
+
+
+10. connect the watch to the phone
+
+in the wear app, go to:
+
+watch settings &gt; about watch &gt; change name
+
+
+change the name to:
+
+userid-xxx-smartwatchid-xxx
+
+example:
+userid-333-smartwatchid-334
+
+for the user id, use the same one you choose in 1.3.
+
+11. start monitoring
+to start monitoring, make sure the phone is connected to the watch via bluetooth.
+then open the apps on the watch and phone.">Initial Installation - Phone &amp; Watch</a><a href="page-10.html" data-search="communication between components communication between components
+use this page when you want to understand how the system parts talk to each other.
+big picture
+researchersideapp
+      |
+      | http webhook calls
+      v
+n8n workflows  &lt;------&gt;  postgresql database
+      ^                       ^
+      |                       |
+      | http post/get         | stores users, use cases,
+      |                       | mappings, schedules, readings,
+android phone relay           | feedback events, and context
+      ^
+      | bluetooth spp
+      v
+wear os smartwatch
+
+what each connection means
+
+researchersideapp -&gt; n8n: the dashboard sends researcher actions to n8n. examples include loading users, creating use cases, assigning mappings, editing schedules, and asking the assistant for help.
+n8n -&gt; postgresql: n8n reads and writes the system data. postgresql is the source of truth for users, use cases, mappings, assignments, schedules, readings, and feedback events.
+android phone -&gt; n8n: the phone sends live sensor and context payloads to n8n and receives haptic instructions in response.
+smartwatch &lt;-&gt; android phone: the watch and phone communicate over bluetooth. the watch sends readings to the phone, and the phone sends vibration commands back to the watch.
+
+important boundaries
+
+the smartwatch does not talk directly to n8n, postgresql, or the researchersideapp.
+the android app does not write directly to the database.
+the researchersideapp does not directly trigger watch vibration. it changes configuration, and runtime flows use that configuration.
+n8n is the backend layer that connects app requests to database operations and haptic decisions.
+
+main runtime flow
+this flow applies to the heartrate use case and to future use cases that rely on body-sensor data from the smartwatch.
+
+the smartwatch reads a body-sensor value, such as heart rate.
+the watch sends the reading to the android phone.
+the phone adds identifiers and context, then sends the request to n8n.
+n8n resolves the user's active mapping through user_uc_mappings -&gt; feedback_config_rules -&gt; usecase.
+n8n applies the mapping, stores the reading and feedback decision, and returns a haptic command.
+the phone relays the command to the watch.
+the watch vibrates.
+
+for other use cases that do not rely on smartwatch body sensors, the android phone sends the user's location data directly to n8n. n8n then uses that location data, and any relevant external or derived context, to decide what haptic command should be returned.
+researcher configuration flow
+
+you make a change in the researchersideapp.
+the app sends an http request to n8n.
+n8n validates the request and updates postgresql.
+runtime flows use the updated configuration the next time data arrives.
+">Communication Between Components</a></section><section class="nav-group"><h2>Phone</h2><a href="page-08.html" data-search="android phone app android phone app
+the phone app connects the smartwatch to the backend. it receives readings from the watch, adds phone-side context when neededת sends them to n8n, and relays haptic instructions back to the watch.
+👤 for researchers
+phone app overview
+phone setup and session checklist
+phone and watch connection
+🛠️ for developers
+phone app configuration
+phone-watch communication
+phone app troubleshooting">Android Phone App</a><a href="page-04.html" data-search="phone app overview phone app overview
+purpose
+this page explains the android phone app in practical terms for researchers preparing or running a study.
+what the phone app does
+the phone app is the communication bridge between the smartwatch and the backend. it receives data from the watch, adds phone-side context when needed, sends requests to the backend, and relays haptic instructions back to the watch.
+system flow
+smartwatch → android phone → n8n backend → android phone → smartwatch
+
+researcher responsibilities
+before a session, confirm that:
+
+the phone app is installed.
+bluetooth is enabled.
+the phone can reach the internet or local backend server.
+the app is configured with the correct backend address.
+the phone can communicate with the watch.
+the watch and phone are assigned to the correct participant.
+
+when to check this app
+check the phone app if:
+
+data is not reaching the backend.
+the watch is collecting data but not receiving feedback.
+the backend returns feedback but the watch does not vibrate.
+the phone was moved to a different network or lab setup.
+">Phone App Overview</a><a href="page-03.html" data-search="phone app configuration phone app configuration
+purpose
+this page explains the technical configuration points for the android phone app.
+backend address
+the app must point to the correct backend host. this may be a local lab computer, shared server, or deployment environment.
+when the backend address changes, update the phone app configuration and reinstall or rerun the app.
+network security
+if the system uses a local ip address or plain http in a test environment, android network security settings may need to allow that host.
+key configuration checks
+
+backend ip/domain is correct.
+webhook path is correct.
+http/https configuration is allowed.
+phone and backend are reachable on the same network if testing locally.
+production workflows use active webhook urls rather than test-only urls.
+
+common environments
+
+
+
+environment
+typical concern
+
+
+
+
+local laptop
+phone and laptop must be on the same network.
+
+
+lab server
+phone must reach the server address.
+
+
+remote server
+firewall and https settings must be correct.
+
+
+
+safe configuration process
+
+change the backend host.
+build and run the app.
+send one test request.
+check the backend execution history.
+confirm the response reaches the watch.
+">Phone App Configuration</a><a href="page-02.html" data-search="phone and watch connection phone and watch connection
+use this page when the watch and phone are not communicating reliably.
+what should happen
+the smartwatch sends readings to the phone over bluetooth. the phone sends haptic commands back to the watch over the same local connection path.
+things to check
+
+bluetooth is enabled on the phone.
+the smartwatch app is running.
+the watch is named correctly.
+the phone is paired with or able to discover the watch.
+the phone app is not connected to the wrong watch.
+the watch has not gone into a state where the app stopped running.
+
+common symptoms
+
+data is visible on the watch but not in the backend.
+n8n returns a haptic instruction but the watch does not vibrate.
+the phone appears disconnected or stops receiving watch messages.
+
+what to try
+
+restart the watch app.
+restart the phone app.
+reconnect bluetooth.
+confirm the phone is using the intended participant/watch pair.
+">Phone and Watch Connection</a><a href="page-07.html" data-search="phone-watch communication phone-watch communication
+purpose
+this page explains the phone app’s role in bluetooth communication with the smartwatch.
+communication role
+the phone app receives watch data and sends feedback commands back to the watch. it needs a stable bluetooth connection for the system to work reliably.
+what the phone sends to the backend
+depending on the use case, the phone may send:
+
+user id.
+watch id.
+phone id.
+sensor value.
+sensor or use-case type.
+location data when required.
+timestamp or context fields.
+
+what the phone receives from the backend
+the backend response may include haptic parameters such as:
+
+pulses
+intensity
+duration
+interval
+feedback reason or status
+
+troubleshooting communication
+
+
+
+symptom
+what to check
+
+
+
+
+watch data does not reach the phone
+bluetooth state, watch app state, device pairing.
+
+
+phone reaches backend but watch does not vibrate
+phone-watch connection and returned command format.
+
+
+connection is unstable
+distance, battery state, bluetooth permissions, background restrictions.
+
+
+">Phone-Watch Communication</a><a href="page-06.html" data-search="phone setup and session checklist phone setup and session checklist
+use this page before a participant session to confirm the android phone app is ready.
+what the phone does during a session
+the phone app connects the smartwatch to the backend. it receives readings from the watch, adds phone-side context when needed, sends the request to n8n, and relays haptic instructions back to the watch.
+before you begin
+
+confirm the smartwatch app is installed. you can find the app apk below. you can download it directly to your phone sotrage and open it.phone-app.apk [link removed for anonymity]
+confirm the phone has network access.
+confirm the phone is configured for the correct n8n/backend environment.
+confirm bluetooth is enabled.
+confirm the phone can connect to the smartwatch.
+confirm location permissions are available if the use case needs gps.
+run a test request if possible.
+
+during a session
+watch for signs that the phone is still connected to the watch and backend. if readings stop appearing in the dashboard, the phone relay is one of the first places to check.">Phone Setup and Session Checklist</a><a href="page-05.html" data-search="phone app troubleshooting phone app troubleshooting
+purpose
+this page lists common android phone app issues and how to investigate them.
+data is not reaching the backend
+check:
+
+backend ip/domain.
+phone network connection.
+whether the backend is running.
+whether the correct webhook path is used.
+whether the workflow is active.
+android network security settings.
+
+watch does not vibrate
+check:
+
+backend response includes haptic parameters.
+phone receives the response.
+phone is connected to the watch.
+watch app is running.
+watch permissions are granted.
+
+phone cannot connect to watch
+check:
+
+bluetooth enabled on both devices.
+pairing state.
+watch app running.
+phone app running.
+nearby devices/bluetooth permissions.
+
+useful logs
+use android studio logcat to inspect app behavior. look for network errors, bluetooth connection errors, and backend response messages.
+escalation checklist
+when reporting a phone app issue, include:
+
+phone model.
+android version.
+app version or build date.
+backend host used.
+watch model.
+what action was being tested.
+any logcat error messages.
+">Phone App Troubleshooting</a></section><section class="nav-group"><h2>Smartwatch</h2><a href="page-44.html" data-search="smartwatch app smartwatch app
+use this section when you need to prepare or troubleshoot the smartwatch app.
+smartwatch app
+the smartwatch app collects participant readings and performs vibration patterns when it receives haptic commands from the phone.
+link to download the app apk:
+[link removed for anonymity]
+👤 for researchers
+smartwatch app overview
+watch setup and permissions
+watch session checklist
+🛠️ for developers
+smartwatch haptic command handling
+smartwatch sensor management
+smartwatch troubleshooting" aria-current="page">Smartwatch App</a><a href="page-38.html" data-search="smartwatch app overview smartwatch app overview
+purpose
+this page explains the smartwatch app in practical terms for researchers preparing or running a participant session.
+what the smartwatch app does
+the smartwatch app is the participant-facing part of the system. it collects physiological or sensor data, communicates with the android phone relay, and delivers haptic feedback through vibration.
+main responsibilities
+
+collect sensor data such as heart rate.
+send watch-side data to the phone relay.
+receive vibration commands from the phone.
+translate haptic commands into physical vibration patterns.
+continue running during a study session using foreground/background support.
+
+researcher responsibilities
+before a session, confirm that:
+
+the watch is charged.
+the app is installed.
+the required permissions are granted.
+the watch name follows the expected naming format.
+the watch can communicate with the phone.
+a simple test reading and test vibration work as expected.
+
+when to check this app
+check the smartwatch app if:
+
+heart rate or sensor values are missing.
+the phone does not receive watch data.
+the backend returns feedback but the participant does not feel a vibration.
+the watch disconnects during a session.
+">Smartwatch App Overview</a><a href="page-43.html" data-search="watch setup and permissions watch setup and permissions
+use this page before a participant session to confirm the smartwatch app is ready.
+what the watch does
+the smartwatch collects participant readings and performs vibration patterns when it receives haptic commands from the phone.
+requirements
+
+a wear os watch.
+usb or wireless debugging.
+a paired or reachable android phone for relay testing.
+
+required permissions
+grant these permissions when prompted:
+
+body sensors.
+nearby devices or bluetooth.
+location, if required by the device or study configuration.
+
+before you begin
+
+confirm the smartwatch app is installed. you can find the app apk below, along with installation instructions:instructions for installing watch apk [link removed for anonymity]watch-app.apk [link removed for anonymity]
+confirm the app opens.
+keep the app running for the session.
+confirm the watch can connect to the android phone.
+run one test vibration if possible.
+
+watch naming
+use this format:
+userid-&lt;id&gt;-smartwatchid-&lt;id&gt;
+
+example:
+userid-1-smartwatchid-1
+
+this helps the system connect readings to the correct participant and device.">Watch Setup and Permissions</a><a href="page-40.html" data-search="smartwatch sensor management smartwatch sensor management
+purpose
+this page explains how smartwatch sensors are handled and how new sensor types can be added.
+current sensing role
+the smartwatch collects sensor values needed by the study and sends them through the phone relay. heart rate is a central example, but the system can be extended to support additional watch sensors.
+adding a new watch sensor
+general process:
+
+identify the wear os sensor type.
+register the sensor in the app’s sensor registry.
+choose a clear sensor/use-case name.
+make sure the phone relay and backend use the same name.
+add or update dictionary entries for the new use case.
+add haptic mappings if the sensor should trigger feedback.
+test with one watch before using it in a study.
+
+naming consistency
+the sensor name used by the watch, phone, backend, database, and researcher dashboard must match. inconsistent naming is a common cause of missing data or missing feedback.
+testing a new sensor
+
+confirm raw values are available on the watch.
+confirm the phone receives the values.
+confirm the backend receives the expected use-case name.
+confirm data is saved.
+confirm feedback is generated only when expected.
+">Smartwatch Sensor Management</a><a href="page-39.html" data-search="smartwatch haptic command handling smartwatch haptic command handling
+purpose
+this page explains how the smartwatch receives and performs haptic feedback commands.
+haptic command fields
+the smartwatch receives commands that may include:
+
+
+
+field
+meaning
+
+
+
+
+pulses
+number of vibration pulses.
+
+
+intensity
+vibration strength.
+
+
+duration
+length of each pulse.
+
+
+interval
+time between pulses.
+
+
+min value
+minimum response parameter value the vibration can trigger from
+
+
+max value
+maximum response parameter value the vibration can trigger from
+
+
+
+runtime flow
+
+the smartwatch reads a body-sensor value, such as heart rate.
+the watch sends the reading to the android phone.
+the phone adds identifiers and context, then sends the request to n8n.
+n8n resolves the user's active mapping through user_uc_mappings -&gt; feedback_config_rules -&gt; usecase.
+n8n applies the mapping, stores the reading and feedback decision, and returns a haptic command.
+the phone relays the command to the watch.
+the watch vibrates.
+
+what to check when vibration feels wrong
+
+whether the command includes all required fields.
+whether intensity or duration is too low to notice.
+whether the watch is in a state that allows vibration.
+whether the expected mapping rule was used by the backend.
+">Smartwatch Haptic Command Handling</a><a href="page-42.html" data-search="watch session checklist watch session checklist
+use this page during session preparation and quick troubleshooting.
+quick checklist
+
+watch is charged.
+watch app is installed and running.
+permissions are granted.
+watch name matches the expected participant/watch id.
+phone can connect to the watch.
+sensor readings appear when expected.
+test vibration works if available.
+
+if readings are missing
+check:
+
+the watch app is still running.
+body sensor permissions are granted.
+the phone is connected to the watch.
+the phone is sending data to n8n.
+researchersideapp is showing the correct user/use case.
+
+if vibration does not happen
+check:
+
+the active mapping exists for the participant.
+n8n returns a haptic instruction.
+the phone receives and relays the instruction.
+the watch app receives the command and is allowed to vibrate.
+">Watch Session Checklist</a><a href="page-41.html" data-search="smartwatch troubleshooting smartwatch troubleshooting
+purpose
+this page lists common smartwatch app issues and how to investigate them.
+no sensor data
+check:
+
+body sensors permission.
+watch placement on the wrist.
+whether the app is running.
+whether the foreground service is active.
+watch battery and power-saving state.
+
+watch cannot communicate with the phone
+check:
+
+bluetooth enabled on both devices.
+phone app is running.
+watch app is running.
+device naming is correct.
+nearby devices/bluetooth permissions are granted.
+
+watch receives command but does not vibrate
+check:
+
+command includes pulses, intensity, duration, and interval.
+intensity and duration are noticeable.
+watch vibration settings are enabled.
+the app is allowed to run in the background.
+
+useful logs
+use android studio logcat for watch-side debugging. look for sensor registration, bluetooth connection, incoming command, and vibration execution messages.
+escalation checklist
+when reporting a smartwatch issue, include:
+
+watch model.
+wear os version.
+app version or build date.
+phone model.
+participant/user id used for testing.
+what was expected to happen.
+what actually happened.
+">Smartwatch Troubleshooting</a></section><section class="nav-group"><h2>Researcher dashboard</h2><a href="page-34.html" data-search="researchersideapp researchersideapp
+use this section when you are preparing, running, or reviewing a study from the researchersideapp.
+see the introduction video at
+👤 for researchers
+dashboard overview
+users and use cases
+mappings and haptic feedback
+graphs and data review
+chat and knowledge assistant
+use case dictionary
+schedules
+🛠️ for developers
+researchersideapp configuration
+researchersideapp troubleshooting">ResearcherSideApp</a><a href="page-28.html" data-search="dashboard overview dashboard overview
+use this page to understand what the researchersideapp dashboard is for and what you can do from it.
+what the dashboard helps you do
+the researchersideapp is the main place where researchers prepare and manage the study. you use it to choose participants, select use cases, manage haptic feedback mappings, schedule checks, review data, and work with the ai assistant.
+main areas in the ui
+
+user selection: choose the participant you are working with.
+use case selection: choose the study condition or measurement type, such as heartrate, pollution, airpressure, or another configured use case.
+mappings: view and manage how measured values become haptic feedback patterns.
+schedules: create and manage recurring checks or scheduled feedback behavior.
+graphs/data views: review sensor readings and feedback history.
+ai assistant chat: ask for help with mappings, use cases, and workflow guidance.
+dictionary: describes use-case parameters so the system and assistant have better context.
+
+when to use the dashboard
+use the dashboard before, during, and after a participant session:
+
+before: confirm users, devices, use cases, and active mappings.
+during: check whether data is arriving.
+after: review saved data and note any issues.
+
+before a live session
+
+confirm the dashboard opens.
+confirm users load.
+select the correct participant.
+confirm the selected participant has the expected use case and mapping.
+confirm relevant schedules are active or inactive as intended.
+confirm recent data appears when expected.
+">Dashboard Overview</a><a href="page-31.html" data-search="researchersideapp configuration researchersideapp configuration
+purpose
+this page explains the technical configuration points for maintaining the researchersideapp.
+database configuration
+the dashboard must connect to the same database environment used by the backend workflows for the current study.
+check:
+
+database host.
+database name.
+username and password.
+port.
+environment type: local, staging, or active study.
+
+backend configuration
+if the dashboard calls backend endpoints, make sure endpoint urls match the active n8n environment.
+common configuration issues
+
+
+
+issue
+likely cause
+
+
+
+
+app starts but no users appear
+wrong database or missing records.
+
+
+rule changes do not affect feedback
+dashboard and backend are using different databases.
+
+
+assistant actions fail
+backend workflow unavailable or incorrect endpoint.
+
+
+data views are empty
+no data recorded or wrong filter/use case.
+
+
+
+safe configuration process
+
+update configuration in a test environment first.
+start the app.
+confirm users and mappings appear.
+run a small test action.
+confirm backend and database results match.
+">ResearcherSideApp Configuration</a><a href="page-33.html" data-search="users and use cases users and use cases
+use this page when you need to select a participant or work with use cases in the dashboard.
+users
+a user represents a participant in the study. in the dashboard, selecting a user sets the context for mappings, schedules, graphs, and assistant/chat actions.
+monitoring status
+each user in the users list has a colored status indicator:
+
+🟢 connected: a request was received within the last 10 minutes.
+🟠 not responding: no request was received for more than 10 minutes.
+🔴 alert sent: it has been notified that the user is offline.
+⚪ monitoring stopped: monitoring was intentionally stopped or is not expected.
+
+[removed for anonymity]
+hover over the indicator to see its description.
+use cases
+a use case represents the type of signal or condition being monitored. examples include:
+
+heartrate
+pollution
+airpressure
+uvindex
+sunazimuth
+moonazimuth
+
+selecting a user and a use case
+when you select a user and use case, the dashboard should show the mappings and data relevant to that context.
+the current use case is based on the participant's active mapping assignment. in practical terms, this means that changing a participant's mapping can also change what use case appears active for that participant.
+assigning a use case to a user
+to allow a user (participant) to get a vibration, you’ll need to assign a use case to them. go to the user’s tab, select your desired user, locate the “assign use case” section at the bottom, and select the use case.
+creating a use case
+use-case names should be compact and should not contain spaces. after creating a use case, it should become available in the dashboard without requiring you to manually rebuild the page.
+full guide: adding a new use case">Users and Use Cases</a><a href="page-30.html" data-search="mappings and haptic feedback mappings and haptic feedback
+use this page to understand how haptic feedback mappings work in the researchersideapp.
+what a mapping is
+a mapping tells the system how to turn a measured value into a vibration pattern.
+for example, a heart-rate mapping might say that one value range should create a soft vibration and another value range should create a stronger or longer vibration.
+mappings can include settings such as:
+
+value range
+number of pulses
+intensity
+duration
+interval between pulses
+
+shared mappings
+a mapping can be shared by more than one participant. this is useful when multiple participants should receive the same haptic behavior.
+be careful when editing a shared mapping. a global edit can affect every participant assigned to that mapping.
+editing for one participant
+if a change should apply only to one selected participant, use the selected-user-only mapping flow. the system creates a copy of the mapping and assigns that copy to the selected participant. this avoids accidentally changing the mapping for everyone else.
+mapping history
+the system keeps mapping assignment history. this helps you understand which mapping was active for a participant over time.">Mappings and Haptic Feedback</a><a href="page-29.html" data-search="graphs and data review graphs and data review
+use this page when you want to inspect readings, trends, or feedback events.
+what the graph/data views are for
+the dashboard can show recent or historical sensor data. this helps you check whether the participant-side flow is working and whether the recorded values match the study expectations.
+what to look for
+
+are new readings arriving?
+do the values look plausible?
+does the selected user match the displayed data?
+does the selected use case match the displayed data?
+are feedback events appearing when expected?
+
+when data is missing
+if data is missing, check the system in this order:
+
+the selected user and use case in researchersideapp.
+the android phone connection to n8n.
+the bluetooth connection between phone and watch.
+the smartwatch app permissions and sensor state.
+n8n and database status.
+">Graphs and Data Review</a><a href="page-32.html" data-search="researchersideapp troubleshooting researchersideapp troubleshooting
+purpose
+this page lists common researchersideapp issues and how to investigate them.
+app does not start
+check:
+
+jdk 17 is installed.
+build command completes.
+configuration is valid.
+n8n is running
+database is running.
+database credentials are correct.
+
+users are missing
+check:
+
+n8n executions have no failed ones
+correct database environment.
+user table has records.
+db manager workflow, if the dashboard depends on backend endpoints.
+filters in the dashboard.
+
+rule changes do not affect vibration
+check:
+
+rule is active.
+rule type matches the use case exactly.
+incoming values fall inside the rule range.
+there is no participant-specific rule overriding the global rule.
+backend workflows use the same database as the dashboard.
+
+assistant action fails
+check:
+
+request includes required details.
+relevant backend workflow is active.
+use-case name is correct.
+schedule id, user id, or mapping values are included when required.
+
+escalation checklist
+when reporting an issue, include:
+
+app version or build date.
+database&amp;n8n environment.
+user/use-case being tested.
+what action was attempted.
+error message or screenshot.
+whether backend executions show an error.
+">ResearcherSideApp Troubleshooting</a></section><section class="nav-group"><h2>Workflows &amp; guides</h2><a href="page-27.html" data-search="n8n n8n
+this page is the entry point for the automation layer of the smartwatch haptic feedback system. use it to understand how workflows are operated during a study, how the backend processes data, and where to find detailed pages for each workflow or feature.
+login info [redacted]
+email: [redacted]
+password: [redacted]
+
+before changing a workflow
+start with the researcher guide if you are preparing or running a study. use the developer guide when inspecting workflow logic, editing routing, or troubleshooting backend behavior. use the experiment configuration guides when working with feature-specific settings such as recurring schedules or use-case parameter definitions.
+researchers should usually only touch one workflow: vibration orchestrator, and only when adding a new use case.
+for the full researcher workflow, use the top-level adding a new use case page. it connects researchersideapp, the ai assistant chat, and vibration orchestrator.
+👤 for researchers
+getting started with n8n
+vibration orchestrator for researchers
+adding a new use case
+🛠️ for developers
+n8n node types used in the system
+running and testing workflows
+n8n workflows breakdown
+setting credentials on n8n">n8n</a><a href="page-21.html" data-search="getting started with n8n getting started with n8n
+n8n is the workflow-automation platform used as the backend layer of the smartwatch haptic feedback system.
+it receives requests from the system applications, communicates with the database and external services, processes data, and returns responses to the calling application.
+this page provides a basic orientation for people who are unfamiliar with n8n. it does not explain the system’s individual workflows in detail.
+
+opening n8n
+open the n8n editor using the address configured for the server, the default address is usually:
+[link removed for anonymity]
+
+sign in using the n8n administrator account.
+after signing in, the main workflow list should appear.
+
+if n8n does not open, confirm that the n8n service is running before troubleshooting individual workflows.
+
+
+
+what is a workflow?
+a workflow is a visual sequence of connected nodes.
+each node performs one task, such as:
+
+receiving an http request
+validating or transforming data
+querying postgresql
+calling an external api
+running another workflow
+using an ai model
+returning a response
+
+data moves between nodes from left to right along the connections.
+
+main parts of the n8n editor
+nodes
+each node performs a specific operation.
+selecting a node opens its configuration panel, where you can inspect:
+
+input fields
+parameters
+expressions
+credentials
+output data
+errors
+
+executions
+the executions view shows previous workflow runs.
+use it to inspect:
+
+whether a workflow succeeded or failed
+which node failed
+the input and output of each node
+error messages
+execution time
+
+test and production webhooks
+webhook nodes normally provide two urls:
+/webhook-test/...
+
+used while manually testing a workflow in the n8n editor.
+/webhook/...
+
+used by the installed applications when the workflow is active.
+
+the android application and researchersideapp should normally use the production /webhook url.
+/webhook
+
+
+
+running a workflow manually
+to test a workflow:
+
+open the workflow.
+select execute workflow or listen for test event, depending on its trigger.
+send the test request.
+follow the highlighted execution path.
+select each relevant node to inspect its input and output.
+confirm that the final response is correct.
+
+a manual test does not always prove that the production webhook works. after testing in the editor, also test the active workflow through its production url.
+
+understanding node data
+each node receives items containing json data.
+a simplified item may look like:
+{
+  &quot;userid&quot;: 1,
+  &quot;type&quot;: &quot;heartrate&quot;,
+  &quot;value&quot;: 82
+}
+
+select the input and output tabs inside a node to see how the data changes as it moves through the workflow.
+when debugging, begin at the first node and follow the execution one node at a time until the data becomes incorrect or a node fails.
+
+expressions
+n8n expressions allow one node to use data produced by another node.
+expressions commonly appear in this form:
+{{ $json.value }}
+
+this reads the value field from the current item.
+an expression may also reference a named node:
+{{ $('node name').first().json.value }}
+
+before changing an expression:
+
+confirm the referenced node name.
+confirm that the required field exists.
+inspect the node’s actual output.
+preserve the expected data type.
+
+
+credentials
+credentials store access information for services such as:
+
+postgresql
+openai
+email
+external apis
+
+credentials should be configured through n8n’s credential manager rather than written directly inside nodes.
+never place passwords, api keys, or private tokens in:
+
+sticky notes
+code nodes
+exported workflow files
+screenshots
+public documentation
+
+for credential setup, open the setting credentials on n8n page.
+
+activating workflows
+a webhook workflow must normally be active before another application can call its production url.
+after changing a workflow:
+
+save it.
+activate it if it is a public entrypoint.
+confirm that its production webhook is registered.
+test it from the application that normally calls it.
+
+internal workflows may be triggered through execute workflow nodes rather than public webhooks.
+
+important rule after importing workflows
+workflow references may not survive a clean import correctly.
+after importing the system workflows, inspect every:
+
+execute workflow node
+ai workflow-tool node
+
+re-select the intended target workflow from the dropdown and save the workflow.
+a node may show an old workflow name while still containing an invalid internal workflow id.
+
+safe editing rules
+before changing a workflow:
+
+export or duplicate the current working version.
+use test participants and test data.
+change one logical area at a time.
+run the affected branch manually.
+inspect the database and final response.
+test the real calling application.
+keep the previous export until the new version is validated.
+
+researchers should only edit workflow areas explicitly identified as researcher-editable in the documentation.
+do not modify shared database logic, participant-assignment behavior, or application response structures without understanding the dependent components.
+
+where to continue
+use the following pages according to your task:
+
+n8n workflows breakdown — understand the purpose and ownership of each workflow.
+running and testing workflows — test webhooks and inspect executions.
+n8n node types used in the system — understand the node types used by the project.
+setting credentials on n8n — configure postgresql, openai, email, and other credentials.
+vibration orchestrator for researchers — safely connect a new use-case branch.
+adding a new use case — follow the complete use-case creation process.
+n8n developer reference [link removed for anonymity] — maintain mapping, schedule, ai, and database behavior.
+
+💡
+
+start with the workflow breakdown before editing any workflow.
+
+">Getting Started with n8n</a><a href="page-22.html" data-search="n8n node types used in the system n8n node types used in the system
+purpose
+this page explains the main n8n node types used in the system in plain language.
+webhook
+creates an http endpoint. apps and dashboards call these endpoints to send data or request information.
+respond to webhook
+returns the final response to the app or dashboard. without this node, the caller may wait without receiving a clear result.
+postgresql
+runs database queries. used for users, mappings, schedules, dictionary entries, sensor data, and assistant context.
+code
+runs small javascript transformations. used for validation, parsing, date calculation, response formatting, and routing preparation.
+switch
+routes a request based on an action or type. common action examples include add, list, change, activate, and deactivate.
+merge
+combines branches back into one response path.
+set
+creates or updates fields used later in the workflow.
+ai model and llm chain nodes
+used by the assistant workflows to classify requests, answer questions, and route structured actions.
+practical reading tip
+when inspecting a workflow, follow the data from left to right. start at the trigger, then inspect parsing, database access, routing, and final response.">n8n Node Types Used in the System</a><a href="page-23.html" data-search="n8n workflows breakdown n8n workflows breakdown
+
+💼 purpose of this page
+this page explains how the n8n workflows in the smartwatch haptic feedback system are divided, how they communicate, which components call them, and which workflows should be edited for different types of changes.
+it is intended as a system-maintenance map. for node-level explanations, installation instructions, or testing procedures, use the linked documentation pages.
+
+
+
+workflow architecture
+the n8n backend is divided into three layers:
+
+public entrypoint workflowsreceive requests from the android phone or researchersideapp.
+internal manager workflowsperform focused database actions such as managing mappings, schedules, and dictionary entries.
+ai analysis workflowsanswer researcher questions using project documentation, literature, participant data, and mapping information.
+
+
+workflow groups
+public entrypoints
+these workflows expose production webhooks and must be active for the complete system to operate:
+
+vibration orchestrator
+db manager
+chat orchestrator
+
+internal manager workflows
+these workflows are normally called by another workflow through an execute workflow node:
+
+mapping manager
+schedule manager
+dictionary manager
+use case builder
+
+they should not normally be called directly by the android applications.
+ai workflows
+the current read-only ai analysis system consists of:
+
+expert panel agent
+agent expert - project context
+agent expert - literature
+agent expert - participant data
+agent expert - mapping design
+
+older workflow
+
+knowledge agent
+
+the current chat orchestrator routes read-only questions to expert panel agent, not to a separate knowledge agent. treat knowledge agent as an older standalone implementation.
+
+quick workflow reference
+
+
+
+workflow
+primary responsibility
+called by
+main data source
+change risk
+
+
+
+
+vibration orchestrator
+live sensor processing and haptic decisions
+android phone
+postgresql and external apis
+high
+
+
+db manager
+researcherside dashboard and database endpoints
+researcherside and phone
+postgresql
+high
+
+
+chat orchestrator
+chat validation, context, planning, and routing
+researcherside ai chat
+postgresql and subworkflows
+high
+
+
+mapping manager
+mapping creation, assignment, editing, and history-sensitive actions
+chat orchestrator
+mapping tables and sensor history
+very high
+
+
+schedule manager
+schedule creation and state management
+chat orchestrator
+user_schedules
+medium
+
+
+dictionary manager
+use-case parameter dictionary operations
+chat orchestrator
+usecasedictionary and api_pool
+medium
+
+
+use case builder
+generates implementation instructions for a new api use case
+chat orchestrator
+dictionary and api metadata
+medium
+
+
+expert panel agent
+coordinates grounded read-only analysis
+chat orchestrator
+four expert tools
+medium
+
+
+project context expert
+explains project architecture and implementation
+expert panel
+project documentation
+low
+
+
+literature expert
+retrieves academic evidence
+expert panel
+literature vector store
+low
+
+
+participant data expert
+analyzes participants, readings, assignments, and feedback
+expert panel
+postgresql
+medium
+
+
+mapping design expert
+explains mappings or generates advisory proposals
+expert panel
+postgresql and design context
+medium
+
+
+knowledge agent
+simplified standalone knowledge answer flow
+legacy/manual invocation
+postgresql and openai
+low
+
+
+
+
+1. vibration orchestrator
+purpose
+processes live sensor or external api data and converts it into smartwatch haptic feedback.
+main entrypoint and responsibilities
+post /webhook/usecase-routing
+
+main responsibilities:
+
+receive data from the android phone.
+identify the requested use case.
+use the supplied sensor value or retrieve a value from an external api.
+find the participant’s active feedback mapping.
+calculate pulses, intensity, duration, and interval.
+store the reading and feedback decision.
+return the haptic command to the phone.
+
+main data flow
+watch sensor
+→ android phone
+→ vibration orchestrator
+→ use-case branch
+→ sensor value or external api
+→ active mapping
+→ haptic calculation
+→ database storage
+→ android phone
+→ watch vibration
+
+credentials needed
+
+postgresql
+external api credentials, where required
+
+what researchers may edit
+researchers should normally edit this workflow only when adding a new use case.
+safe edit areas:
+
+add a new condition to route by sensor type.
+copy and connect the existing use-case template branch.
+change the use-case name.
+configure the api request.
+configure the numeric response-value extraction.
+adjust the branch rate limit when required.
+
+researchers should not edit:
+
+shared mapping-resolution logic
+database insertion logic
+generic response nodes
+existing unrelated use-case branches
+
+
+2. db manager
+purpose
+provides the backend endpoints used by researchersideapp and several android phone configuration checks.
+main responsibilities
+
+retrieve participants and devices.
+retrieve mappings and current assignments.
+retrieve mapping history.
+manage monitoring state.
+retrieve sensor readings and feedback events.
+provide available sensor and use-case information.
+handle stopped-monitoring alerts.
+support researcherside dashboard operations.
+
+example endpoints include:
+get /webhook/get-users
+get /webhook/current-configurations
+get /webhook/sensor-data
+get /webhook/get-sensor-types
+get /webhook/monitoring-config
+get /webhook/users-mappings-history
+post /webhook/stopped-monitoring-alert
+
+main data flows
+researcherside or android phone
+→ db manager webhook
+→ request validation
+→ postgresql query or update
+→ response formatting
+→ calling application
+
+credentials needed
+
+postgresql
+smtp, for stopped-monitoring email alerts
+
+what researchers may edit
+researchers should normally not edit db manager.
+a maintainer may edit it when:
+
+researcherside requires a new endpoint.
+a new database field must be returned.
+monitoring or alert behavior changes.
+a dashboard query or response structure is incorrect.
+updating the send offline email target email address
+
+be careful when changing response field names because researcherside depends on the exact json structure.
+
+3. chat orchestrator
+purpose
+receives researcherside ai-chat requests, loads the current application context, and routes each request to the correct specialized workflow.
+main entrypoint and responsibilities
+post /webhook/chat
+
+main responsibilities:
+
+validate the chat payload.
+load the selected participant, use case, and mapping context.
+maintain the chat session.
+identify the researcher’s intent.
+route the request to one workflow.
+return the final structured response to researcherside.
+
+possible targets:
+
+mapping manager
+schedule manager
+dictionary manager
+use case builder
+expert panel agent
+clarification response
+
+main data flow
+researcherside chat
+→ chat orchestrator
+→ validate input
+→ load session and context
+→ planner
+→ selected subworkflow
+→ structured response
+→ researcherside
+
+credentials needed
+
+postgresql
+openai
+
+what researchers may edit
+researchers should not normally edit this workflow.
+maintainers may edit:
+
+planner instructions (prompt)
+routing rules
+application-context fields
+supported target workflows
+final response formatting
+
+changes here can affect every ai feature, so test all major chat intents after editing.
+
+4. mapping manager
+purpose
+performs deterministic mapping operations requested through the ai assistant.
+main responsibilities
+supported operations include:
+
+list active mappings
+list all mappings
+add a mapping
+change a mapping
+assign a mapping
+duplicate a mapping for one participant
+remove or deactivate a mapping
+brainstorm new mapping ideas
+
+main data flow
+chat orchestrator
+→ mapping manager
+→ action router
+→ validation
+→ postgresql query or update
+→ formatted response
+→ chat orchestrator
+
+credentials needed
+
+postgresql
+openai, for mapping brainstorming
+
+what researchers may edit
+researchers should not edit this workflow directly.
+maintainers may edit it when changing:
+
+mapping actions
+mapping validation rules
+shared versus participant-specific behavior
+assignment logic
+deactivation and reassignment behavior
+mapping brainstorm context
+
+this is a high-risk workflow. always test:
+
+shared mapping edits
+participant-specific copies
+assignment history
+mapping deactivation
+participant reassignment
+
+
+5. schedule manager
+purpose
+manages participant schedules requested through the ai assistant.
+main responsibilities
+
+add, change, activate and decativate a schedule
+list active schedules
+list all schedules
+
+main schedule fields include:
+
+participant
+interval
+next run date
+measure type
+trigger percentage
+active state
+
+main data flow
+chat orchestrator
+→ schedule manager
+→ parse schedule parameters
+→ action router
+→ postgresql query or update
+→ formatted response
+
+credentials needed
+
+postgresql
+
+what researchers may edit
+researchers should manage schedules through researcherside or the ai assistant rather than editing this workflow.
+maintainers may edit:
+
+supported schedule actions
+validation requirements
+date calculations
+active/inactive behavior
+use-case filtering
+
+
+6. dictionary manager
+purpose
+manages the yellow book use-case dictionary.
+main responsibilities
+
+list dictionary entries
+retrieve, add, edit and remove one use case’s parameters
+remove all dictionary entries for a use case
+
+the dictionary defines:
+
+parameter name
+parameter format
+whether it is required
+description
+fixed value, when applicable
+related external api
+
+main data flow
+chat orchestrator
+→ dictionary manager
+→ action router
+→ usecasedictionary and api_pool
+→ formatted response
+
+credentials needed
+
+postgresql
+
+what researchers may edit
+researchers should usually manage dictionary entries through researcherside or the ai assistant.
+maintainers may edit:
+
+supported dictionary actions
+parameter validation
+api-pool relationships
+returned dictionary structure
+
+keep the use-case name identical across the database, vibration orchestrator, researcherside, and device applications.
+
+7. use case builder
+purpose
+generates copy-paste-ready instructions for adding a new external api-based use case to the vibration orchestrator.
+main responsibilities
+
+load the selected use case’s dictionary parameters.
+load matching api metadata.
+identify the api endpoint.
+identify the numeric response path.
+generate the required template changes.
+explain where each generated value should be pasted.
+
+the builder does not edit or activate the workflow automatically.
+main data flow
+chat orchestrator
+→ use case builder
+→ dictionary and api metadata
+→ validate required information
+→ generate template instructions
+→ researcher response
+
+credentials needed
+
+postgresql
+openai
+
+what researchers may edit
+researchers normally do not edit the use case builder itself.
+they use its output to edit only the marked template areas inside vibration orchestrator:
+
+set type
+construct api request
+extract
+route by sensor type
+optional rate limit
+
+maintainers may edit the builder when the vibration orchestrator template or generated output format changes.
+related pages
+
+adding a new use case
+
+
+8. expert panel agent
+purpose
+coordinates read-only analysis by selecting the relevant expert workflows.
+main responsibilities
+
+answer project and architecture questions.
+retrieve academic evidence.
+analyze participant and experiment data.
+explain existing mappings.
+generate advisory mapping proposals when explicitly requested.
+return citations, warnings, findings, and recommendations in a structured format.
+
+it must never perform database mutations.
+main data flow
+chat orchestrator
+→ expert panel agent
+→ selected expert tools
+→ combined grounded response
+→ chat orchestrator
+
+credentials needed
+
+openai
+credentials required by the connected expert workflows
+
+what researchers may edit
+researchers should not edit this workflow.
+maintainers may edit:
+
+expert-selection rules
+read-only boundaries
+response schema
+citation handling
+proposal-generation rules
+experiment-summary behavior
+
+changing the response schema requires checking researcherside compatibility.
+related pages
+
+ai assistant and dictionary [link removed for anonymity]
+
+
+9. agent expert – project context
+purpose
+answers technical questions about the project and system architecture.
+main responsibilities
+
+explain component responsibilities.
+explain n8n, postgresql, android, watch, and researcherside integration.
+explain workflow ownership.
+explain supported system behavior.
+
+credentials needed
+
+openai
+project-context data source or vector store
+
+what researchers may edit
+researchers should not edit the workflow.
+maintainers may update:
+
+project documentation sources
+system instructions
+architecture context
+outdated technical facts
+
+
+10. agent expert – literature
+purpose
+retrieves and explains academic literature relevant to haptic feedback and sensory substitution.
+main responsibilities
+
+retrieve relevant papers.
+explain academic concepts.
+return source information and citations.
+distinguish a single retrieved study from broader evidence.
+
+credentials needed
+
+openai
+literature vector store or retrieval source
+
+what researchers may edit
+researchers should not edit the workflow.
+maintainers may update:
+
+literature files
+vector-store connection
+retrieval instructions
+citation-output format
+
+
+11. agent expert – participant data
+purpose
+analyzes participant, sensor, assignment, and feedback data.
+main responsibilities
+
+summarize participant readings.
+analyze a use-case cohort.
+review sensor-data coverage.
+review active mappings and assignment history.
+review feedback or alert activity.
+identify missing or insufficient data.
+
+main data flow
+expert panel
+→ participant data expert
+→ postgresql queries
+→ findings and evidence
+→ expert panel
+
+credentials needed
+
+postgresql
+openai, when used for interpretation
+
+what researchers may edit
+researchers should not edit this workflow.
+maintainers may edit:
+
+analysis queries
+supported scopes
+evidence references
+findings structure
+data-quality warnings
+
+avoid making claims stronger than the available records.
+
+12. agent expert – mapping design
+purpose
+explains current mappings and generates advisory mapping proposals when requested.
+main responsibilities
+two modes are supported:
+existing-mapping analysis
+
+explain current mapping ranges.
+compare haptic parameters.
+describe assignment information.
+discuss likely feedback differences.
+
+proposal design
+
+brainstorm new mapping options.
+suggest gentler or stronger feedback.
+suggest participant-specific alternatives.
+generate advisory parameter proposals.
+
+proposals are not automatically saved.
+credentials needed
+
+postgresql
+openai
+
+what researchers may edit
+researchers should not edit the workflow directly.
+maintainers may edit:
+
+existing-mapping analysis rules
+proposal requirements
+haptic parameter constraints
+output structure
+safety and feedback-burden instructions
+
+related pages
+
+mapping sections in researchersideapp documentation
+
+
+13. knowledge agent
+purpose
+[deprecated] provides a simpler knowledge-answer flow using the selected use case and its active mappings.
+main responsibilities
+
+fetch active mappings for a use case.
+add them to the ai context.
+answer the researcher’s question.
+return a text response.
+
+main data flow
+manual or legacy workflow call
+→ fetch active mappings
+→ openai
+→ text response
+
+credentials needed
+
+postgresql
+openai
+
+what researchers may edit
+researchers should not edit this workflow.
+the current chat orchestrator uses the expert panel for read-only analysis. keep this workflow only for legacy or standalone use unless the routing architecture is intentionally changed.
+
+workflow dependency map
+researchersideapp
+├── db manager
+└── chat orchestrator
+    ├── mapping manager
+    ├── schedule manager
+    ├── dictionary manager
+    ├── use case builder
+    └── expert panel agent
+        ├── project context expert
+        ├── literature expert
+        ├── participant data expert
+        └── mapping design expert
+
+
+important import note
+after importing the workflows into a new n8n instance, re-select the target workflow inside every:
+
+execute workflow node
+ai workflow tool node
+
+exported workflow ids may not match the ids assigned in the new n8n environment.
+
+related documentation
+
+getting started with n8n
+n8n node types used in the system
+running and testing workflows
+n8n developer reference [link removed for anonymity]
+setting credentials on n8n
+smartwatch haptic workflow repository [link removed for anonymity]
+">n8n Workflows Breakdown</a><a href="page-24.html" data-search="n8n webhook tests breakdown n8n webhook tests breakdown
+
+this is a test page for future developers. it keeps the commands that provide useful coverage of the main system features and removes repetitive variants that test the same workflow branch.
+
+
+how to run the curl commands correctly
+
+make sure n8n is running. these commands use `[link removed for anonymity] so the n8n instance must be available on the same computer. if n8n is hosted elsewhere, replace the base address with the correct server address.
+make sure the relevant workflow is active. commands using /webhook/ call an active workflow.
+for testing inside the n8n editor, click listen for test event in the workflow and replace /webhook/ with /webhook-test/ in the command.
+open powershell and paste the entire command on one line. the examples use curl.exe, which calls the normal windows curl program instead of the powershell alias.
+replace every placeholder before running the command. examples include:
+&lt;user_id&gt;
+&lt;mapping_id&gt;
+&lt;schedule_id&gt;
+
+
+use test records whenever possible. commands marked as changing data can create, update, activate, deactivate, reassign, or log information. do not run them on important production records unless the change is intended.
+run one state-changing command at a time. check the response and the database before continuing, especially when testing mapping or schedule changes.
+use a new session_id for separate chat tests. this prevents old chat history from affecting the new test.
+allow time between sensor-routing tests. the vibration orchestrator may rate-limit repeated requests. environmental tests may also fail when an external service is unavailable.
+read the http status shown at the top of the response.
+2xx normally means the request succeeded.
+400 normally means the request was rejected because the input was invalid.
+404 means the requested record or route was not found.
+409 means the request conflicts with the current data.
+5xx usually means a workflow, database, or external-service error.
+
+
+
+what the curl options mean
+
+i includes the http status and response headers.
+ss hides the progress meter but still shows errors.
+x sets the request type, such as get or post.
+h adds a request header.
+d sends json data to the webhook.
+
+safety labels
+
+🟢 read-only — should not intentionally change application data.
+🟡 changes data — creates, updates, activates, deactivates, reassigns, or logs data.
+🔵 external service / ai — contacts an external api or ai model and may also save execution or session data.
+
+
+1. basic system and database checks
+check that the db manager webhook is reachable
+safety: 🟢 read-only
+what this test is useful for: use this first when the application cannot reach n8n. it checks whether the main db manager webhook is available and can return a normal response.
+curl.exe -i -ss -x post &quot;[link removed for anonymity]
+
+get the current feedback configurations
+safety: 🟢 read-only
+what this test is useful for: shows the rules that connect sensor values to vibration behavior. this helps confirm that the application can load the available mappings.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+get users and their active mappings
+safety: 🟢 read-only
+what this test is useful for: shows every user together with the use case and feedback rule currently assigned to that user. this is useful when a user appears to have the wrong configuration.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+get the available sensor and use-case types
+safety: 🟢 read-only
+what this test is useful for: shows the use cases stored in the system, such as heartrate. run this when a use case is missing from the interface or cannot be selected.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+get heartrate sensor data
+safety: 🟢 read-only
+what this test is useful for: checks whether saved heartrate readings for user 100 can be found and returned correctly. change the user id when testing another user.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+get a user's mapping history
+safety: 🟢 read-only
+what this test is useful for: shows both current and previous heartrate mapping assignments for user 100. this helps explain when and how a user's assignment changed.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+2. monitoring state
+get a user's monitoring configuration
+safety: 🟡 changes data
+what this test is useful for: returns the monitoring setup for user 100. it also marks monitoring as expected, clears the offline-alert flag, and updates the user's last request time.
+curl.exe -i -ss -x get &quot;[link removed for anonymity]
+
+stop monitoring intentionally
+safety: 🟡 changes data
+what this test is useful for: tells the system that user 100 stopped monitoring on purpose. this prevents the system from treating the stop as an unexpected offline event.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;reason&quot;:&quot;user_stopped&quot;}'
+
+3. use cases and feedback mappings
+create a new use case
+safety: 🟡 changes data
+what this test is useful for: creates a temporary use case and checks whether name validation and database insertion work. change the name before running the command again.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;name&quot;:&quot;curltestusecase&quot;,&quot;description&quot;:&quot;temporary use case created by the webhook curl catalog&quot;}'
+
+assign a use case to a user
+safety: 🟡 changes data
+what this test is useful for: assigns use case 3 to user 100. the workflow may reuse a previous mapping or choose an active default mapping for that use case.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;usecaseid&quot;:3}'
+
+activate an existing mapping
+safety: 🟡 changes data
+what this test is useful for: makes an existing feedback rule available for use. replace the placeholder with a mapping id returned by the current-configurations test.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;mappingid&quot;:&lt;mapping_id&gt;,&quot;active&quot;:true}'
+
+deactivate a mapping and handle affected users
+safety: 🟡 changes data
+what this test is useful for: turns off a mapping. the workflow should move affected users to another suitable mapping, or return a conflict response when no replacement exists.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;mappingid&quot;:&lt;mapping_id&gt;,&quot;active&quot;:false}'
+
+insert a feedback rule through set-rules
+safety: 🟡 changes data
+what this test is useful for: creates a heartrate feedback rule using the special nested-list format required by this endpoint. this is especially useful after changes to the rule-import workflow.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '[[{&quot;type&quot;:&quot;heartrate&quot;,&quot;minvalue&quot;:60,&quot;maxvalue&quot;:100,&quot;minpulses&quot;:1,&quot;maxpulses&quot;:3,&quot;minintensity&quot;:20,&quot;maxintensity&quot;:60,&quot;minduration&quot;:100,&quot;maxduration&quot;:300,&quot;mininterval&quot;:200,&quot;maxinterval&quot;:600,&quot;active&quot;:true}]]'
+
+assign an existing mapping through mapping-commands
+safety: 🟡 changes data
+what this test is useful for: checks the command path used to assign a specific mapping to a specific user. replace both placeholders with real test records.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;assign_mapping_to_user&quot;,&quot;mapping_id&quot;:&lt;mapping_id&gt;,&quot;user_id&quot;:&lt;user_id&gt;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-mapping-assign&quot;}'
+
+change a mapping for all assigned users
+safety: 🟡 changes data
+what this test is useful for: changes one vibration setting in a shared mapping. because the mapping is shared, every user assigned to it may be affected.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;change&quot;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-mapping-change&quot;,&quot;params&quot;:{&quot;id&quot;:&lt;mapping_id&gt;,&quot;minpulses&quot;:2}}'
+
+create a user-specific mapping copy
+safety: 🟡 changes data
+what this test is useful for: copies an existing mapping, changes the copied value, and assigns the copy only to one user. other users keep the original mapping.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;duplicate_mapping_for_user&quot;,&quot;original_mapping_id&quot;:&lt;mapping_id&gt;,&quot;user_id&quot;:&lt;user_id&gt;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-mapping-duplicate&quot;,&quot;params&quot;:{&quot;minpulses&quot;:3}}'
+
+reject an unsupported mapping command
+safety: 🟢 read-only
+what this test is useful for: checks that the system refuses an unknown command instead of sending it to the mapping manager. a correct result is an http 400 response.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;unsupported&quot;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;}'
+
+4. schedule management
+list all schedules for a use case
+safety: 🟢 read-only
+what this test is useful for: shows both active and inactive heartrate schedules. run this before changing a schedule so you can find the correct schedule id.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;listall&quot;,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-schedule-list-all&quot;,&quot;params&quot;:{&quot;user_id&quot;:100}}'
+
+add a schedule
+safety: 🟡 changes data
+what this test is useful for: creates a heartrate schedule for user 100 that runs every seven days. it also checks whether the next run date is calculated correctly.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;add&quot;,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-schedule-add&quot;,&quot;params&quot;:{&quot;user_id&quot;:100,&quot;interval_days&quot;:7,&quot;measure_type&quot;:&quot;average&quot;,&quot;trigger_percentage&quot;:10}}'
+
+change a schedule
+safety: 🟡 changes data
+what this test is useful for: updates an existing schedule's timing, calculation method, trigger level, and next run date. replace the placeholder with a real schedule id.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;change&quot;,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-schedule-change&quot;,&quot;params&quot;:{&quot;schedule_id&quot;:&lt;schedule_id&gt;,&quot;user_id&quot;:100,&quot;interval_days&quot;:14,&quot;measure_type&quot;:&quot;median&quot;,&quot;trigger_percentage&quot;:15}}'
+
+deactivate a schedule
+safety: 🟡 changes data
+what this test is useful for: turns off one schedule without deleting it. the workflow also checks that the schedule belongs to the selected use case.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;deactivate&quot;,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-schedule-deactivate&quot;,&quot;params&quot;:{&quot;schedule_id&quot;:&lt;schedule_id&gt;}}'
+
+activate a schedule
+safety: 🟡 changes data
+what this test is useful for: turns a schedule back on. the workflow also turns off other schedules for the same use case so that only the intended schedule remains active.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;action&quot;:&quot;activate&quot;,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;session_id&quot;:&quot;curl-schedule-activate&quot;,&quot;params&quot;:{&quot;schedule_id&quot;:&lt;schedule_id&gt;}}'
+
+5. sensor routing and vibration generation
+route a heartrate reading
+safety: 🟡 changes data
+what this test is useful for: sends a heartrate value through the full sensor workflow. it checks the selected rule, the vibration result, rate limits, and sensor-data logging.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;smartwatchid&quot;:200,&quot;androidid&quot;:2,&quot;type&quot;:&quot;heartrate&quot;,&quot;value&quot;:82}'
+
+route a temperature request
+safety: 🔵 external service + changes data
+what this test is useful for: gets the temperature for the supplied location, then uses it to calculate vibration feedback and log the result. it also checks the connection to the weather service.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;smartwatchid&quot;:200,&quot;androidid&quot;:2,&quot;type&quot;:&quot;temperature&quot;,&quot;lat&quot;:32.794,&quot;lon&quot;:34.989}'
+
+route a pollution request
+safety: 🔵 external service + changes data
+what this test is useful for: gets air-quality information for the supplied location, applies the pollution feedback rule, and logs the result. it checks a different external service from the weather test.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;smartwatchid&quot;:200,&quot;androidid&quot;:2,&quot;type&quot;:&quot;pollution&quot;,&quot;lat&quot;:32.794,&quot;lon&quot;:34.989}'
+
+reject an unsupported sensor type
+safety: 🟢 read-only
+what this test is useful for: sends a sensor type that the system does not support. the workflow should return its fallback response instead of trying to process the value.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;smartwatchid&quot;:200,&quot;androidid&quot;:2,&quot;type&quot;:&quot;unsupportedcurltype&quot;,&quot;value&quot;:42}'
+
+reject a sensor request with missing device ids
+safety: 🟢 read-only
+what this test is useful for: checks that the workflow refuses a request when the smartwatch and android device ids are missing. this confirms that required input is being checked.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;userid&quot;:100,&quot;type&quot;:&quot;heartrate&quot;,&quot;value&quot;:82}'
+
+6. ai chat routing
+test participant-level chat analysis
+safety: 🔵 external ai + saves session data
+what this test is useful for: asks the ai to explain the current heartrate mapping for one participant without changing it. it checks participant context, ai routing, and chat-history storage.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;session_id&quot;:&quot;curl-chat-participant&quot;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;user_id&quot;:100,&quot;user_name&quot;:&quot;curl test user&quot;,&quot;analysis_scope&quot;:&quot;participant&quot;,&quot;message&quot;:&quot;explain the current heartrate mapping for this participant without changing anything.&quot;}'
+
+test use-case-wide chat analysis
+safety: 🔵 external ai + saves session data
+what this test is useful for: asks the ai to summarize heartrate mappings across the whole use case. it checks the all-users analysis path and chat-history storage.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;session_id&quot;:&quot;curl-chat-usecase&quot;,&quot;usecase_id&quot;:3,&quot;usecase_name&quot;:&quot;heartrate&quot;,&quot;all_users_selected&quot;:true,&quot;analysis_scope&quot;:&quot;usecase&quot;,&quot;message&quot;:&quot;summarize the active heartrate mappings without changing anything.&quot;}'
+
+reject incomplete chat input
+safety: 🔵 may reach ai validation path
+what this test is useful for: leaves out the required use-case id. the request should be rejected, confirming that incomplete chat requests cannot continue through the normal workflow.
+curl.exe -i -ss -x post &quot;[link removed for anonymity] -h &quot;content-type: application/json&quot; -d '{&quot;session_id&quot;:&quot;curl-chat-invalid&quot;,&quot;message&quot;:&quot;this request intentionally omits the use-case id.&quot;}'
+
+
+tests intentionally left out
+the full webhooks available contain additional commands for alternate sensor-data query formats, extra validation cases, and every supported environmental sensor type. they were not repeated here because they follow the same main workflow paths as the selected tests.
+the selected temperature test represents the weather-data path, while pollution represents a separate air-quality service. the selected heartrate test covers direct sensor values supplied by the device.">n8n Webhook Tests Breakdown</a><a href="page-25.html" data-search="running and testing workflows running and testing workflows
+purpose
+this page explains how to run and test n8n workflows safely before using the system with participants.
+recommended testing process
+
+identify the workflow you need to test.
+use a known participant id and device id.
+run the workflow in test mode first.
+send a sample request.
+check each node output.
+confirm the final response.
+confirm the database row was created or updated when expected.
+
+what to inspect during a test
+
+incoming request fields.
+parsed values.
+database query results.
+mapping rule chosen by the workflow.
+generated vibration parameters.
+final webhook response.
+
+common signs of a problem
+
+
+
+symptom
+what to check
+
+
+
+
+webhook does not respond
+workflow is inactive or wrong url is used.
+
+
+empty database result
+wrong database credentials or missing rows.
+
+
+watch does not vibrate
+missing haptic parameters or phone-watch connection issue.
+
+
+assistant asks for clarification
+request is missing action, use case, user, or required values.
+
+
+
+n8n webhook tests breakdown">Running and Testing Workflows</a><a href="page-26.html" data-search="vibration orchestrator for researchers vibration orchestrator for researchers
+use this page when you need to modify the n8n vibration orchestrator workflow for a new use case.
+what researchers should edit
+researchers should usually only touch the vibration orchestrator workflow.
+the practical task is to connect a new use-case flow to the workflow switch. the workflow should already include a template flow for new use cases.
+what changes
+for a new use case, the expected change is small:
+
+use the existing template flow.
+connect it to the switch branch for the new use case.
+change only the three required nodes in that template flow.
+
+the ai assistant chat in researchersideapp can help provide the values or expressions for those three nodes.
+what not to change
+
+do not edit unrelated branches.
+do not edit db manager unless a maintainer asks you to.
+do not edit mapping manager unless a maintainer asks you to.
+do not change active participant workflows during a live session unless the study lead approves it.
+
+where to find the full steps
+use the top-level adding a new use case page for the complete process.">Vibration Orchestrator for Researchers</a><a href="page-01.html" data-search="adding a new use case adding a new use case
+use this page when you want to add a new sensor, context value, or experiment condition that can produce haptic feedback.
+you will use three parts of the system:
+
+researchersideapp: create the use case and define its dictionary entry.
+ai agent chat: ask for the parameters and n8n node changes you need.
+n8n vibration orchestrator: connect the new use-case flow to the switch using the template flow.
+
+before you start
+
+confirm you are working in the intended environment.
+confirm the researchersideapp can load use cases.
+confirm you can open the vibration orchestrator workflow in n8n.
+do not edit unrelated n8n workflows unless a maintainer asks you to.
+
+step 1: create the use case in researchersideapp
+create the new use case from the researchersideapp. use a compact name with no whitespace.
+examples:
+
+airpressure
+uvindex
+heartrate
+pollution
+
+the app should store the use-case id and name after creation. this matters because the chat and n8n flows use the selected use-case context.
+step 2: add or review the dictionary entry
+use the dictionary feature in researchersideapp to describe what this use case needs.
+include the practical details a flow needs, such as:
+
+what value the use case measures.
+whether it uses watch data, phone context, an external api, or a derived value.
+which parameters are needed.
+what value range the mapping should expect.
+
+step 3: ask the ai agent chat for implementation help
+open the ai agent chat with the new use case selected.
+ask for the n8n implementation details for the new use case. for example:
+i created the use case airpressure. based on the dictionary entry, tell me what to change in the vibration orchestrator template flow. focus only on the three nodes that need editing.
+
+the chat should provide the values or expressions needed for the editable template nodes.
+step 4: update vibration orchestrator in n8n
+open the vibration orchestrator workflow.
+find the template flow for new use cases. duplicate or adapt that template flow, then connect it to the switch branch for the new use case.
+[removed for anonymity]
+only change the three required nodes in the template flow. use the values provided by the ai agent chat.
+do not change unrelated branches unless you are intentionally maintaining the workflow.
+step 5: test the new use case
+after saving the workflow:
+
+send or simulate one request for the new use case.
+confirm n8n follows the new switch branch.
+confirm the flow produces the expected value.
+confirm the mapping decision is stored or returned as expected.
+confirm the researchersideapp can show the use case and relevant mapping state.
+
+what to check if it does not work
+
+the use-case name in researchersideapp, dictionary, and n8n switch must match.
+the selected use-case id should be available before sending chat requests.
+the new branch should be connected to the vibration orchestrator switch.
+the three edited template nodes should match the ai agent chat instructions.
+the mapping for the new use case should exist and be assigned where needed.
+">Adding a New Use Case</a><a href="page-20.html" data-search="adding a new use case adding a new use case
+use this page when you want to add a new sensor, context value, or experiment condition that can produce haptic feedback.
+you will use three parts of the system:
+
+researchersideapp: create the use case and define its dictionary entry.
+ai agent chat: ask for the parameters and n8n node changes you need.
+n8n vibration orchestrator: connect the new use-case flow to the switch using the template flow.
+
+before you start
+
+confirm you are working in the intended environment.
+confirm the researchersideapp can load use cases.
+confirm you can open the vibration orchestrator workflow in n8n.
+do not edit unrelated n8n workflows unless a maintainer asks you to.
+
+step 1: create the use case in researchersideapp
+create the new use case from the researchersideapp. use a compact name with no whitespace.
+examples:
+
+airpressure
+uvindex
+heartrate
+pollution
+
+the app should store the use-case id and name after creation. this matters because the chat and n8n flows use the selected use-case context.
+step 2: add or review the dictionary entry
+use the dictionary/yellow-book area in researchersideapp to describe what this use case needs.
+include the practical details a flow needs, such as:
+
+what value the use case measures.
+whether it uses watch data, phone context, an external api, or a derived value.
+which parameters are needed.
+what value range the mapping should expect.
+
+step 3: ask the ai agent chat for implementation help
+open the ai agent chat with the new use case selected.
+ask for the n8n implementation details for the new use case. for example:
+i created the use case airpressure. based on the dictionary entry, tell me what to change in the vibration orchestrator template flow. focus only on the three nodes that need editing.
+
+the chat should provide the values or expressions needed for the editable template nodes.
+step 4: update vibration orchestrator in n8n
+open the vibration orchestrator workflow.
+find the template flow for new use cases. duplicate or adapt that template flow, then connect it to the switch branch for the new use case.
+only change the three required nodes in the template flow. use the values provided by the ai agent chat.
+do not change unrelated branches unless you are intentionally maintaining the workflow.
+step 5: test the new use case
+after saving the workflow:
+
+send or simulate one request for the new use case.
+confirm n8n follows the new switch branch.
+confirm the flow produces the expected value.
+confirm the mapping decision is stored or returned as expected.
+confirm the researchersideapp can show the use case and relevant mapping state.
+
+what to check if it does not work
+
+the use-case name in researchersideapp, dictionary, and n8n switch must match.
+the selected use-case id should be available before sending chat requests.
+the new branch should be connected to the vibration orchestrator switch.
+the three edited template nodes should match the ai agent chat instructions.
+the mapping for the new use case should exist and be assigned where needed.
+">Adding a New Use Case</a><a href="page-35.html" data-search="schedules schedules
+purpose
+schedules automatically update a participant’s haptic feedback range using recent sensor data. when a schedule is due, the system calculates the average, median, or mode (most common value). it then creates a range below and above this value using the selected percentage. this allows the feedback range to adapt without manual updates.
+a schedule defines:
+
+which participant to check;
+how often the check runs;
+how the participant’s recent data is calculated, using the average, median, or most common value;
+how much the vibration trigger should change.
+
+this is useful when haptic feedback needs to adapt to new participant data during a study. without a schedule, the researcher would need to review the data and update the settings manually.
+example
+a schedule runs every seven days and uses the average value with a range of 20%. if the participant’s average is 100, the new feedback range is 80–120. the next update is planned for seven days later.
+what a schedule includes
+
+
+
+field
+meaning
+
+
+
+
+schedule_id
+automatically generated schedule identifier.
+
+
+user_id
+the user the schedule applies to.
+
+
+interval_days
+the number of recent days used for the calculation. it also controls when the next update runs.
+
+
+next_run_date
+the next scheduled run date.
+
+
+measure_type
+calculation method: average, median, or mode.
+
+
+trigger_percentage
+the size of the range below and above the calculated value.
+
+
+active
+whether the schedule is enabled.
+
+
+
+how schedule management works
+
+a request arrives with an action, parameters, session id, and use-case context.
+the request is parsed and checked.
+values are converted into the expected data types.
+next_run_date is calculated from today plus interval_days.
+the requested action is routed to the matching database operation.
+
+supported actions
+
+
+
+action
+description
+
+
+
+
+add
+creates a new active schedule.
+
+
+change
+updates interval, measure type, trigger percentage, or user.
+
+
+deactivate
+disables a schedule.
+
+
+activate
+re-enables a schedule.
+
+
+listall
+lists all schedules for the use case.
+
+
+listactive
+lists active schedules only.
+
+
+
+where researchers can use schedules
+schedules can be managed from the researchersideapp schedule area and through the ai assistant.">Schedules</a><a href="page-47.html" data-search="use case dictionary use case dictionary
+purpose
+the use case dictionary defines the expected structure of research use cases and their telemetry parameters. it helps keep incoming data consistent and understandable.
+what a dictionary entry includes
+
+
+
+field
+meaning
+
+
+
+
+dict_entry
+automatically generated entry id.
+
+
+usecase_name
+formal name of the experiment or sensor type, such as heartrate or pollution.
+
+
+usecase_parameter_name
+expected parameter key in the incoming data.
+
+
+parameter_format
+expected data type or structure.
+
+
+is_required
+whether the parameter must be present.
+
+
+description
+human-readable explanation of the parameter.
+
+
+
+why this matters
+the dictionary gives researchers and developers one place to define what each use case expects. this reduces confusion when adding new experiment types or changing incoming data.
+management flow
+
+a dictionary request arrives with an action and parameters.
+the request is checked and unpacked.
+the action router sends it to the correct operation.
+the dictionary table is listed, added to, edited, or cleared according to the request.
+
+supported actions
+
+
+
+action
+description
+
+
+
+
+add
+adds a parameter definition.
+
+
+edit
+updates an existing parameter definition.
+
+
+remove_parameter
+removes one parameter definition from a use case.
+
+
+remove_usecase
+removes dictionary definitions associated with a use case.
+
+
+list
+lists dictionary entries.
+
+
+
+where researchers can use the dictionary
+dictionary actions can be performed through the ai assistant. developers can also inspect the dictionary when adding new data types or use cases.">Use Case Dictionary</a><a href="page-09.html" data-search="chat and knowledge assistant chat and knowledge assistant
+what the assistant is
+the assistant is a chat interface for asking questions about the selected study context and for requesting supported system actions. the chat appears in the researchersideapp, while n8n receives each message, decides which workflow should handle it, and returns the answer.
+the assistant can use the currently selected use case, participant, mapping, all-users scope, recent messages, database records, project documentation, and academic sources. this means the answer can change when you select a different participant or use case.
+before you send a message
+
+select the correct use case.
+select a participant, or choose all users for an experiment-level question.
+check the context drawer if you want to confirm what the assistant can currently see.
+use a new chat session when you want to start a separate topic.
+
+a participant must belong to the selected use case before participant-specific chat can continue.
+what the assistant can do
+questions and read-only analysis
+the assistant can:
+
+explain the project, its components, database rules, and n8n workflows.
+explain haptic-feedback terms, mapping parameters, and current configurations.
+answer academic questions using uploaded literature and return source information.
+summarize a selected participant or the complete selected use case.
+analyze sensor coverage, recorded values, feedback activity, mapping assignments, assignment history, and data limitations.
+compare current mappings.
+suggest up to three mapping options with parameters, reasoning, trade-offs, warnings, and evidence references.
+generate step-by-step guidance for adding an external api-based use case.
+
+knowledge answers, analyses, and mapping proposals are read-only. a proposal shown in the chat is not saved, activated, or assigned.
+supported system actions
+when the request is clear and complete, the assistant can route these actions to deterministic n8n workflows:
+
+mappings: list active or all mappings; add or remove a mapping; change a global mapping; duplicate and change a mapping for one participant; assign an existing mapping.
+dictionary: list or retrieve entries; add, edit, or remove a parameter; remove a use case's dictionary entries.
+schedules: list active or all schedules; add or change a schedule; activate or deactivate a schedule.
+use-case setup: generate implementation instructions for the vibration orchestrator template. this produces guidance only and does not edit the workflow automatically.
+
+the current release supports one active mapping per participant globally. it does not maintain a separate active mapping for every participant-and-use-case combination.
+how it works in n8n
+researchersideapp
+    |
+    | post /webhook/chat
+    v
+chat orchestrator
+    |
+    +-- mapping manager
+    +-- expert panel agent
+    +-- dictionary manager
+    +-- schedule manager
+    +-- use case builder
+    +-- clarification response
+    |
+    v
+reply returned to the app and session history updated
+
+chat orchestrator
+the chat orchestrator is the entry point for every chat message.
+
+the researchersideapp sends the message with a session id, use-case id, use-case name, selected participant details when available, the analysis scope, recent history, and other visible context.
+the workflow validates that the required message, session, and use-case information is present.
+it creates or updates the session in the postgresql agent_session table.
+it loads the latest conversation and active mapping context from the v_agent_context database view.
+gpt-4o acts as a planner. it classifies the request as mapping, knowledge, dictionary, scheduling, use-case building, or clarification and returns a structured routing decision.
+n8n checks the model's decision and sends the request to exactly one supported workflow.
+the selected workflow validates its inputs, reads or updates the database when allowed, or calls the relevant expert.
+the result is formatted for the researchersideapp. the app can show the reply together with proposal, warning, and source cards.
+n8n saves the user message and assistant reply to the session history.
+
+the model plans and routes the request. database changes are performed by fixed workflow steps and parameterized database queries, not by the model directly.
+expert panel agent
+all knowledge, explanation, analysis, research, and recommendation requests go to the read-only expert panel agent. gpt-4o selects only the expert or experts needed for the question.
+the connected experts are:
+
+agent expert - project context: searches the uploaded project documentation. use it for system architecture, component responsibilities, database contracts, the javafx application, android and smartwatch apps, and n8n implementation questions.
+agent expert - literature: searches uploaded academic sources. use it for research evidence about haptic feedback, tactons, sensory substitution, interoception, wearable feedback, urgency, vibration timing, feedback burden, and related concepts.
+agent expert - participant data: reads postgresql records for either one selected participant or the full selected use case. it summarizes readings, coverage, values, feedback activity, mapping assignments, and data-quality limits.
+agent expert - mapping design: reads current mappings, the selected participant's assignment, and recent sensor statistics. it can explain current mappings or generate read-only mapping proposals when the user explicitly asks for ideas, personalization, or design changes.
+
+the expert panel combines the relevant results into one concise answer. it keeps returned database references and file citations, separates current mappings from proposals, and does not perform changes.
+ai model
+the current active implementation uses openai gpt-4o in the chat orchestrator, expert panel agent, participant data expert, mapping design expert, project and literature retrieval, mapping brainstorming, and use-case guidance.
+changing the configured model in n8n changes this implementation detail, so this page should be reviewed whenever the workflow model settings change.
+openai vector stores
+two vector stores in the openai platform provide searchable knowledge to the assistant.
+project documentation vector store
+contains five project documents covering the agent implementation, system context, retrieval configuration, knowledge base, and user stories. the project context expert must search this store and retrieves up to five relevant results.
+smartwatch-haptic-project-dev_vs_6a2d3128f3908191bfcabb99e9c73fce.zip [link removed for anonymity]
+academic literature vector store
+contains seven academic papers about haptic feedback and related research topics. the literature expert must search this store, retrieves up to eight relevant results, and reports file citations when available.
+smartwatch-haptic-literature-dev_vs_6a2d3137c91c8191bdd89eadb64e9d36.zip [link removed for anonymity]
+both vector stores were in a completed state in the 18 july 2026 export.
+the participant data expert and mapping design expert do not use these vector stores for live experiment facts. they use the postgresql database so their analysis reflects current participants, readings, mappings, and assignments.
+context awareness
+the assistant receives context automatically from the researchersideapp. this includes:
+
+the selected use case and its id.
+the selected participant, participant name, assignment, and mapping id when available.
+whether all users is selected.
+whether the request should be participant-level or use-case-level.
+active mapping information loaded by n8n.
+recent messages and a short summary of the latest structured answer.
+
+context lets users ask follow-up questions such as “what does that mapping mean?” or “who is the assigned participant?” without repeating every detail. if a follow-up could refer to more than one mapping or participant, the assistant should ask which one you mean instead of guessing.
+changing the selected participant or use case changes the context sent with the next message.
+session history
+chat history is available at two levels:
+
+in the researchersideapp: each use case can have multiple named chat sessions. users can start a new session, reopen previous sessions, browse eight sessions per history page, and delete a locally saved session. the app stores these sessions and their displayed messages on the researcher's computer.
+in postgresql: n8n stores the conversation in agent_session.conversation_history. the database retains the latest 24 messages for each session, which is normally 12 user-and-assistant exchanges.
+for each new request: the app also sends up to 12 recent messages, shortened when necessary, plus a summary of the latest structured response. this supports follow-up questions within the same session.
+
+deleting a chat session in the current researchersideapp removes the local saved session after a confirmation dialog. the current implementation does not send a request to delete the corresponding agent_session record from postgresql.
+suggested prompts and shortcuts
+when the chat is empty, the app shows suggested prompt cards. typing $ also opens command suggestions.
+
+$mapping — show the current feedback mappings.
+$knowledge — explain the background of the selected experiment.
+$dictionary — show use cases in the dictionary.
+$schedule — show active schedules.
+$summarize — summarize the selected participant or selected experiment scope.
+
+you can also write normal sentences:
+explain mapping id 140 in simple language.
+
+summarize this experiment for all selected users.
+
+what does the literature say about feedback burden?
+
+suggest a gentler mapping for the selected participant based on recent readings. do not change anything.
+
+list the active schedules for this participant.
+
+approval before actions
+the read-only expert panel never saves a proposal or changes a record.
+for mapping, dictionary, or schedule changes, the current release uses the following approval rule:
+
+a clear and complete action request from the user is treated as approval to perform that action.
+the assistant validates required ids and values before routing the action.
+if the target, scope, or required information is unclear, the assistant asks a clarification question and does not perform the change.
+a participant-only mapping change is separated from a global mapping change. if a shared mapping could be affected and the scope is unclear, the assistant asks whether the change should be global or participant-only.
+the chat currently has no separate approve button and no second confirmation prompt after a complete action request. a supported change may run immediately after the message is sent.
+
+for safer use, first ask the assistant to list the current record and ids. then send one exact action with the intended scope. do not request changes during a live participant session unless the study procedure allows it.
+example interaction
+starting context: heartrate is selected and participant 333 is selected.
+researcher:
+$summarize
+assistant:
+returns a read-only summary of participant 333's recent readings, feedback activity, current mapping assignment, and data limitations.
+researcher:
+suggest a gentler mapping based on this participant's recent readings. do not change anything.
+assistant:
+calls the participant data and mapping design experts as needed, then shows one or more proposal cards with parameters, reasoning, trade-offs, warnings, and evidence. nothing is saved or assigned.
+researcher:
+assign existing mapping id 191 to participant 333.
+assistant:
+treats this exact instruction as approval, routes it to mapping manager, validates both ids, performs the assignment if valid, and returns the result. there is no separate approval screen.
+important limits
+
+the assistant can be wrong or may lack enough evidence. check warnings and sources.
+academic answers are limited to the papers stored in the literature vector store.
+project answers are limited to the uploaded project documents.
+a missing database record means the assistant lacks evidence; it does not prove that an event never happened.
+mapping proposals are research guidance, not medical advice and not automatically applied.
+use case builder produces copy-and-paste instructions. a maintainer must still review and apply them in n8n.
+the assistant should never invent participant, mapping, schedule, or use-case ids.
+
+related documentation
+
+researchersideapp
+n8n
+n8n developer reference [link removed for anonymity]
+communication between components
+">Chat and Knowledge Assistant</a><a href="page-36.html" data-search="for credential setup, open the setting credentials on n8n page. for credential setup, open the setting credentials on n8n page.">For credential setup, open the Setting Credentials on n8n page.</a><a href="page-37.html" data-search="setting credentials on n8n setting credentials on n8n
+
+this page explains which credentials must be configured in n8n for the smartwatch haptic backend, and where each credential is used.
+it is not a full credential setup tutorial. for detailed setup screens, use the official n8n documentation linked below.
+
+
+
+✅ required credentials
+the project mainly uses these n8n credentials:
+
+
+
+credential
+used for
+n8n docs
+
+
+
+
+postgres
+reading and writing sensor data, users, mappings, feedback rules, alerts
+postgres node docs [link removed for anonymity]
+
+
+openai
+ai agent / llm-based analysis and assistant responses
+openai credentials docs [link removed for anonymity]
+
+
+google gemini / google ai
+alternative llm provider for ai agent / gemini chat model nodes
+google ai credentials docs [link removed for anonymity]
+
+
+send email smtp account
+sending emails
+[link removed for anonymity] [link removed for anonymity]
+
+
+
+
+n8n credentials are private connection settings used by nodes to authenticate with external services. the credentials screen is available from the left menu in n8n.
+
+
+
+🗄️ postgres credential
+the postgres credential connects n8n to the project database.
+in this project, postgres is used for:
+
+fetching active feedback mapping rules
+saving sensor readings
+saving generated alerts
+reading user/use-case mapping data
+supporting researcherside data queries
+
+
+the database used in the project setup is named:
+smartwatchsys_db
+
+
+from the project setup instructions, the postgresql connection settings are generally:
+host: localhost
+port: 5432
+database: smartwatchsys_db
+user: postgres
+password: your postgresql password
+
+the password should be the one chosen during postgresql installation, and that changing the shared postgresql configuration node updates the connection for the relevant flow nodes.
+
+do not keep the default placeholder password in production. use the real password from the postgresql installation.
+
+
+official docs:
+[link removed for anonymity] [link removed for anonymity]
+
+🤖 openai credential
+the openai credential is used when the workflow contains openai-based nodes, such as:
+
+openai
+chat openai
+embeddings openai
+lm openai
+
+n8n’s openai credential uses an api key authentication method.
+
+use openai credentials when the workflow needs gpt-based analysis, natural-language responses, or agent reasoning.
+
+
+official docs:
+[link removed for anonymity] [link removed for anonymity]
+
+✨ google gemini / google ai credential
+the google gemini / google ai credential is used when the workflow contains gemini nodes, such as:
+
+google gemini
+google gemini chat model
+embeddings google gemini
+google gemini / palm-related nodes
+
+n8n’s google gemini credential uses an api key from google ai studio. the n8n docs describe creating an api key in google ai studio and pasting it into the n8n credential.
+
+use this credential if the ai agent or chat model node is configured to use gemini instead of openai.
+
+
+official docs:
+[link removed for anonymity] [link removed for anonymity]
+
+📧 send email credential
+the send email credential is used when the workflow needs to send emails from n8n, for example:
+
+monitoring stopped alerts
+system/admin notifications
+researcher-side status emails
+error or retry-limit notifications
+
+n8n’s send email credential uses an smtp account. to configure it, you generally need the sender email address, password or app password, smtp host, port, and ssl/tls settings. n8n notes that some providers require enabling outgoing smtp or generating an app password first.
+
+for gmail, n8n recommends using an app password, with:
+host: smtp.gmail.com
+port: 465 for ssl
+port: 587 for tls
+ssl/tls: on for port 465
+
+outlook.com / microsoft 365 accounts no longer work with the send email node using basic username/password or app-password smtp authentication. n8n recommends using the microsoft outlook node instead, because it uses oauth 2.0.
+
+
+official docs:
+[link removed for anonymity] [link removed for anonymity]
+
+🧩 where credentials are used in the workflow
+
+
+
+workflow area
+credential needed
+
+
+
+
+heart rate data flow
+postgres
+
+
+sun / moon / environmental api mapping flows
+postgres
+
+
+feedback rule lookup
+postgres
+
+
+sensordata / alert insert flow
+postgres
+
+
+researcherside mapping/history queries
+postgres
+
+
+ai agent responses
+openai or google gemini
+
+
+llm-powered use-case or mapping suggestions
+openai or google gemini
+
+
+
+
+the backend workflow includes postgres nodes such as feedback rule loading, heart-rate history fetching, and sensor-data insertion. these nodes depend on the postgres credential being valid.
+
+
+
+🧪 quick credential test
+after creating or updating credentials:
+
+open a node that uses the credential.
+select the relevant credential from the credential dropdown.
+click test step or run the workflow in test mode.
+confirm that the node returns data and does not show an authentication error.
+
+
+common issues
+if a postgres node fails, check:
+
+postgresql is running
+host and port are correct
+database name is correct
+username and password are correct
+the selected n8n credential is the one used by the node
+the database schema was imported correctly
+
+
+
+🔒 security notes
+
+never paste api keys or database passwords into:
+
+github repositories
+screenshots
+public notion pages
+exported workflow files shared publicly
+frontend android code
+
+
+use n8n credentials instead of hardcoding secrets inside code nodes whenever possible.
+
+📚 official references
+
+postgres node: [link removed for anonymity] [link removed for anonymity]
+openai credentials: [link removed for anonymity] [link removed for anonymity]
+google ai / gemini credentials: [link removed for anonymity] [link removed for anonymity]
+send email credentials: [link removed for anonymity] [link removed for anonymity]
+
+for credential setup, open the setting credentials on n8n page.">Setting Credentials On n8n</a><a href="page-46.html" data-search="tutorial videos tutorial videos [removed for anonymity]">Tutorial Videos</a></section><section class="nav-group"><h2>Database</h2><a href="page-17.html" data-search="database database
+this page is the entry point for understanding the postgresql database used by the smartwatch haptic feedback system. use it to find practical researcher guidance, operational backup/restore instructions, and developer-level schema details.
+before making database changes, confirm whether you are connected to a local, staging, or active study database.
+researchers normally should not edit the database directly; researchersideapp and n8n handle database changes.
+👤 for researchers
+what data is stored
+mapping and assignment history
+database backup and restore
+🛠️ for developers
+full erd schema
+[removed for anonymity]
+database functions and views
+safe database changes">Database</a><a href="page-16.html" data-search="what data is stored what data is stored
+
+-
+-
+-
+-
+
+
+-
+-">What Data Is Stored</a><a href="page-13.html" data-search="full erd schema full erd schema
+[removed for anonymity]
+mermaid format (image below)
+erdiagram
+    user {
+        int userid pk
+        varchar fname
+        varchar lname
+        timestamp lastrequest
+        boolean monitoring_expected
+        boolean offline_alerted
+    }
+
+    watch {
+        int watchid pk
+    }
+
+    androidphone {
+        int phoneid pk
+    }
+
+    watchandroidphone {
+        int watchid pk, fk
+        int phoneid pk, fk
+    }
+
+    userwatchandroidphone {
+        int userid pk, fk
+        int watchid pk, fk
+        int phoneid pk, fk
+    }
+
+    devicesensor {
+        int watchid fk
+        int phoneid fk
+        int userid fk
+        int usecase_id fk
+    }
+
+    usecase {
+        int usecase_id pk
+        varchar name uk
+        text description
+        time log_interval
+    }
+
+    sensordata {
+        bigint id pk
+        int watchid
+        int phoneid
+        int alertid fk
+        int userid
+        double value
+        timestamp time
+        int usecase_id fk
+    }
+
+    alert {
+        int alertid pk
+        varchar alertgiven
+        int intensity
+        int pulses
+        int duration
+        int interval
+        varchar type
+        int fbrangeid fk
+        varchar vibration_reason
+    }
+
+    feedback_config_rules {
+        bigint id pk
+        double minvalue
+        double maxvalue
+        varchar type
+        boolean active
+        double minpulses
+        double maxpulses
+        double minintensity
+        double maxintensity
+        double minduration
+        double maxduration
+        double mininterval
+        double maxinterval
+        int usecase_id fk
+    }
+
+    user_uc_mappings {
+        bigint id pk
+        int user_id fk
+        bigint feedback_config_rule_id fk
+        boolean active
+        timestamptz assigned_at
+        timestamptz deactivated_at
+    }
+
+    user_schedules {
+        int schedule_id pk
+        int user_id fk
+        int interval_days
+        date next_run_date
+        varchar measure_type
+        double trigger_percentage
+        boolean active
+    }
+
+    agent_session {
+        uuid session_id pk
+        text researcher_id
+        int current_usecase_id fk
+        jsonb conversation_history
+        text active_workflow
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    api_pool {
+        int id pk
+        varchar name
+        varchar category
+        text description
+        text endpoint_url
+        varchar method
+        varchar auth_type
+        varchar auth_header
+        jsonb param_schema
+        jsonb sample_response
+        text_array usecase_tags
+        boolean active
+    }
+
+    usecasedictionary {
+        int dict_entry pk
+        varchar usecase_name
+        varchar usecase_parameter_name
+        varchar parameter_format
+        boolean is_required
+        text description
+        varchar param_value
+        int api_pool_id fk
+    }
+
+    watch ||--o{ watchandroidphone : connects
+    androidphone ||--o{ watchandroidphone : connects
+
+    user ||--o{ userwatchandroidphone : owns
+    watchandroidphone ||--o{ userwatchandroidphone : assigned_to
+
+    userwatchandroidphone ||--o{ devicesensor : identifies
+    usecase o|--o{ devicesensor : configured_for
+
+    alert o|--o{ sensordata : generated_for
+    usecase o|--o{ sensordata : records
+
+    feedback_config_rules o|--o{ alert : produces
+    usecase ||--o{ feedback_config_rules : contains
+
+    user ||--o{ user_uc_mappings : receives
+    feedback_config_rules ||--o{ user_uc_mappings : assigned_as
+
+    user ||--o{ user_schedules : has
+    usecase o|--o{ agent_session : session_context
+
+    api_pool ||--o{ usecasedictionary : supplies
+">Full ERD Schema</a><a href="page-12.html" data-search="database functions and views database functions and views
+purpose
+this page explains the main database functions and views used by the system.
+insert_sensor_data(...)
+this function stores a sensor reading together with the haptic alert generated for it.
+it is responsible for:
+
+checking that the incoming use case matches the user’s active use case.
+registering user, watch, or phone records if needed.
+linking the user, watch, and phone.
+creating an alert record.
+creating the matching sensor data record.
+
+resolve_fb_range(_userid, _sensorname, _value)
+this function finds the haptic mapping rule that should be used for a measured value.
+rule priority:
+
+use a participant-specific rule if one exists.
+otherwise use a global active rule.
+return no rule if no matching range exists.
+
+touch_updated_at()
+this trigger helper updates timestamps when rows are changed.
+v_agent_context
+this view prepares useful context for assistant responses. it combines session information, use-case information, and active mapping information.">Database Functions and Views</a><a href="page-14.html" data-search="mapping and assignment history mapping and assignment history
+
+
+
+
+
+-
+-">Mapping and Assignment History</a><a href="page-11.html" data-search="database backup and restore database backup and restore
+purpose
+this page explains how to create a database dump and restore or update a local database from a sql file.
+create a dump file
+use pg_dump to export a database into a sql file.
+pg_dump -h hostname -u username -d databasename -f path/to/your_dump.sql
+
+example:
+pg_dump -h localhost -u postgres -d smartwatchsys_db -f ./smartwatchsys_db_dump.sql
+
+or
+
+open pgadmin
+right click the smartwatchsys_db database
+choose “backup”
+enter filename (e.g., new_db.sql), make sure it ends with .sql
+for format choose “plain”
+click the backup button. the file is usually save in the “documents” folder on your computer
+
+[removed for anonymity]
+update a local database
+💡 after each step you’ll need to type your postgres password, make sure you have it
+
+open the folder with the sql backup file in cmd
+
+force disconnect anyone or any tool using the database right now
+bash
+psql -u postgres -c &quot;select pg_terminate_backend(pid) from pg_stat_activity where datname = 'smartwatchsys_db' and pid &lt;&gt; pg_backend_pid();&quot;
+
+
+drop the current database instance
+bash
+dropdb -u postgres -h localhost smartwatchsys_db
+
+
+create a new database with the exact same name smartwatchsys_db
+bash
+createdb -u postgres smartwatchsys_db
+
+
+upload the sql backup file to the database
+bash
+psql -u postgres -d smartwatchsys_db -f xxxxx.sql
+
+
+restore a local database
+use this command pattern:
+psql -h hostname -u username -d databasename -f path/to/your_file.sql
+
+example:
+psql -h localhost -u postgres -d smartwatchsys_db -f ./db_with_logging.sql
+
+if the database does not exist yet
+create it first:
+create database smartwatchsys_db;
+
+then run the restore command.
+verify after restoring
+select count(*) from &quot;usecase&quot;;
+select count(*) from feedback_config_rules where active = true;
+select count(*) from &quot;user&quot;;
+select * from user_schedules limit 10;
+">Database Backup and Restore</a><a href="page-15.html" data-search="safe database changes safe database changes
+purpose
+this page explains how to make database changes safely without disrupting an active study.
+before changing anything
+
+confirm which database you are connected to.
+create a backup.
+avoid direct edits during a live participant session.
+prefer adding or deactivating rows over deleting them.
+test with one known user before using the change in a study.
+
+changing haptic rules
+recommended process:
+
+list current active rules.
+add the new rule as inactive or test it with a non-live participant.
+activate the rule only when verified.
+keep old rules inactive when possible for traceability.
+confirm generated alerts reference the expected rule.
+
+changing schedules
+check these fields carefully:
+
+user_id
+interval_days
+next_run_date
+measure_type
+trigger_percentage
+active
+
+changing dictionary entries
+only update dictionary definitions when the apps and workflows that send data are aligned with the new expected parameters.
+common mistakes
+
+
+
+mistake
+result
+
+
+
+
+updating the wrong database
+dashboard and n8n show inconsistent data.
+
+
+deleting rules
+harder to reconstruct what happened in a study.
+
+
+changing a use-case name
+existing mappings or data may stop matching.
+
+
+editing during a live session
+participant feedback may change unexpectedly.
+
+
+">Safe Database Changes</a></section></nav><main id="main"><div class="breadcrumb"><a href="index.html">Documentation</a><span>/</span>Smartwatch</div><div class="reading"><article><div class="notion-icon" aria-hidden="true">⌚</div><h1>Smartwatch App</h1>
+<p>Use this section when you need to prepare or troubleshoot the smartwatch app.</p>
+<h1 id="section-1">Smartwatch App</h1>
+<p>The smartwatch app collects participant readings and performs vibration patterns when it receives haptic commands from the phone.</p>
+<p>Link to download the app apk:</p>
+<p>[LINK REMOVED FOR ANONYMITY]</p>
+<p>👤 <strong>For researchers</strong></p>
+<p><a href="page-38.html">Smartwatch App Overview</a></p>
+<p><a href="page-43.html">Watch Setup and Permissions</a></p>
+<p><a href="page-42.html">Watch Session Checklist</a></p>
+<p>🛠️ <strong>For developers</strong></p>
+<p><a href="page-39.html">Smartwatch Haptic Command Handling</a></p>
+<p><a href="page-40.html">Smartwatch Sensor Management</a></p>
+<p><a href="page-41.html">Smartwatch Troubleshooting</a></p></article><aside class="toc" aria-label="On this page"><h2>On this page</h2><a href="#section-1">Smartwatch App</a></aside></div><div class="page-end"><a href="index.html">← All documentation</a><a href="#main">Back to top ↑</a></div></main></div><footer><span>Haptic Feedback · Documentation</span><span>Anonymous review edition · Identifying media and credentials omitted</span></footer></body></html>
